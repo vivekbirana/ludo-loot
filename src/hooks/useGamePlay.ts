@@ -255,11 +255,10 @@ export function useGamePlay(roomId: string | null) {
           const newState = payload.new as Record<string, unknown>;
           if (newState?.token_positions) {
             const incoming = newState.token_positions as unknown as GameState;
-            // Don't overwrite local state during animation or bot turns
             if (!animatingRef.current && !botPlayingRef.current) {
               setGameState(incoming);
-              // If playerIndex hasn't been set yet, reload full game state to set player metadata
-              if (playerIndex === null && !isSpectator) {
+              // If playerIndex hasn't been set yet, reload to set player metadata
+              if (playerIndexRef.current === null) {
                 loadGameState();
               }
             }
