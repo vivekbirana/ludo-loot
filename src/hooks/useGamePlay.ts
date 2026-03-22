@@ -49,16 +49,20 @@ export function useGamePlay(roomId: string | null) {
         .select("user_id, display_name, phone")
         .in("user_id", userIds);
 
-      const names = players.map((p) => {
+      // Build names array indexed by color_index (player game position)
+      const names: string[] = ["", "", "", ""];
+      players.forEach((p) => {
         const profile = profiles?.find((pr) => pr.user_id === p.user_id);
-        if (profile) return profile.display_name || profile.phone.slice(-4);
-        return "Bot";
+        const name = profile ? (profile.display_name || profile.phone.slice(-4)) : "Bot";
+        const colorIdx = (p as any).color_index ?? players.indexOf(p);
+        names[colorIdx] = name;
       });
       setPlayerNames(names);
 
-      const myIndex = players.findIndex((p) => p.user_id === user?.id);
-      if (myIndex >= 0) {
-        setPlayerIndex(myIndex);
+      const myPlayer = players.find((p) => p.user_id === user?.id);
+      if (myPlayer) {
+        const myColorIdx = (myPlayer as any).color_index ?? players.indexOf(myPlayer);
+        setPlayerIndex(myColorIdx);
         setIsSpectator(false);
       } else {
         setIsSpectator(true);
