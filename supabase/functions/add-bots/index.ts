@@ -65,10 +65,19 @@ Deno.serve(async (req) => {
     }
 
     // Find available colors (0=Red, 1=Green, 2=Yellow, 3=Blue)
+    // Opposite pairs: Red(0)<->Yellow(2), Green(1)<->Blue(3)
+    const OPPOSITE_MAP: Record<number, number> = { 0: 2, 2: 0, 1: 3, 3: 1 };
     const takenColors = (existingPlayers || [])
       .map((p: any) => p.color_index)
       .filter((c: any) => c != null);
-    const availableColors = [0, 1, 2, 3].filter((c) => !takenColors.includes(c));
+
+    let availableColors: number[];
+    if (room.max_players === 2 && takenColors.length === 1) {
+      // In 2P mode, bot must take the opposite color
+      availableColors = [OPPOSITE_MAP[takenColors[0]]];
+    } else {
+      availableColors = [0, 1, 2, 3].filter((c) => !takenColors.includes(c));
+    }
 
     const botNames = ["Bot Alpha", "Bot Beta", "Bot Gamma"];
     const bots = [];
