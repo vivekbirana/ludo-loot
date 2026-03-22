@@ -153,6 +153,7 @@ export type Database = {
       }
       room_players: {
         Row: {
+          color_index: number | null
           id: string
           is_ready: boolean
           joined_at: string
@@ -160,6 +161,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          color_index?: number | null
           id?: string
           is_ready?: boolean
           joined_at?: string
@@ -167,6 +169,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          color_index?: number | null
           id?: string
           is_ready?: boolean
           joined_at?: string
