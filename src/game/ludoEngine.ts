@@ -12,8 +12,8 @@ export const BOARD_SIZE = 15;
 export const HOME_TOKEN_POSITIONS = [
   { row: 1.5, col: 1.5 },  // between 1,1 and 1,2
   { row: 1.5, col: 3.5 },  // between 1,3 and 1,4
-  { row: 4.5, col: 1.5 },  // between 4,1 and 4,2
-  { row: 4.5, col: 3.5 },  // between 4,3 and 4,4
+  { row: 3.5, col: 1.5 },  // between 3,1 and 3,2
+  { row: 3.5, col: 3.5 },  // between 3,3 and 3,4
 ];
 
 // Home base top-left corners for each player (Red, Green, Yellow, Blue)
