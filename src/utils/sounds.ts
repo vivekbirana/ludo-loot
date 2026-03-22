@@ -65,7 +65,7 @@ export function playTokenKillSound() {
   const ctx = getAudioContext();
 
   const osc = ctx.createOscillator();
-  const gain = ctx.createGainNode();
+  const gain = ctx.createGain();
 
   osc.type = "sawtooth";
   osc.frequency.setValueAtTime(400, ctx.currentTime);
