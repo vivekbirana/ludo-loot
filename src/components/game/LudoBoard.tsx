@@ -125,7 +125,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize="8"
-                  fill="hsl(155, 60%, 50%)"
+                  fill="hsl(155, 50%, 40%)"
                 >
                   ★
                 </text>
