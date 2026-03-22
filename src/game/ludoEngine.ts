@@ -229,18 +229,19 @@ export function moveToken(state: GameState, tokenIndex: number): GameState {
   if (diceValue === null) return newState;
 
   const token = newState.tokens[currentTurn][tokenIndex];
+  const currentColorIndex = getPlayerColorIndex(newState, currentTurn);
   let gotKill = false;
   let gotHome = false;
 
   if (token.position === "home" && diceValue === 6) {
     // Move out of home to start position
     token.position = "path";
-    token.pathIndex = START_POSITIONS[currentTurn];
+    token.pathIndex = START_POSITIONS[currentColorIndex];
 
     // Check for kills at start
     gotKill = checkAndKill(newState, currentTurn, token.pathIndex);
   } else if (token.position === "path") {
-    const homeEntry = HOME_ENTRY_POSITIONS[currentTurn];
+    const homeEntry = HOME_ENTRY_POSITIONS[currentColorIndex];
     const distToHome = ((homeEntry - token.pathIndex + 52) % 52);
 
     if (distToHome > 0 && distToHome <= diceValue) {
