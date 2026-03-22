@@ -330,6 +330,7 @@ export function useGameRooms() {
     joinRoom,
     joinByCode,
     toggleReady,
+    selectColor,
     leaveRoom,
     startGame,
     fillWithBots,
