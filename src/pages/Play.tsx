@@ -126,6 +126,23 @@ const Play = () => {
 
   return (
     <div className="px-4 pt-6 space-y-6">
+      {/* Rejoin Banner */}
+      {activeGameId && (
+        <div className="glass rounded-xl p-4 flex items-center justify-between border border-accent/30 animate-slide-up">
+          <div>
+            <p className="font-heading font-bold text-sm">Game in Progress!</p>
+            <p className="text-xs text-muted-foreground">You have an active game. Rejoin to continue playing.</p>
+          </div>
+          <Button
+            size="sm"
+            className="bg-gradient-primary font-heading font-bold text-primary-foreground shadow-glow"
+            onClick={() => navigate(`/game/${activeGameId}`)}
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1" />
+            Rejoin
+          </Button>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-heading font-bold">Play</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
