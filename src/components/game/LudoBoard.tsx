@@ -109,14 +109,13 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
           return (
             <g key={`path-${idx}`}>
               <rect
-                x={cell.col * cellSize + 1}
-                y={cell.row * cellSize + 1}
-                width={cellSize - 2}
-                height={cellSize - 2}
+                x={cell.col * cellSize}
+                y={cell.row * cellSize}
+                width={cellSize}
+                height={cellSize}
                 fill="white"
                 stroke="black"
                 strokeWidth="0.5"
-                rx="2"
               />
               <text
                 x={cell.col * cellSize + cellSize / 2}
