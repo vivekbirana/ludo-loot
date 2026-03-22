@@ -5,6 +5,9 @@ export const PLAYER_COLORS = ["#E53E3E", "#38A169", "#D69E2E", "#3182CE"] as con
 export const PLAYER_NAMES = ["Red", "Green", "Yellow", "Blue"] as const;
 export const PLAYER_BG = ["#FED7D7", "#C6F6D5", "#FEFCBF", "#BEE3F8"] as const;
 
+// Standard Ludo: Red(TL) vs Yellow(BR), Green(TR) vs Blue(BL)
+// Player seating order: 0=Red(TL), 1=Green(TR), 2=Yellow(BR), 3=Blue(BL)
+
 // Board is 15x15 grid
 export const BOARD_SIZE = 15;
 
