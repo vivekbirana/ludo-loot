@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Users, Coins, Radio, Trophy, XCircle } from "lucide-react";
+import { Eye, Users, Radio, Trophy, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import CoinBalance from "@/components/CoinBalance";
@@ -8,25 +8,32 @@ import CoinBalance from "@/components/CoinBalance";
 interface LiveGame {
   id: string;
   code: string;
-  bet_amount: number;
-  max_players: number;
+  betAmount: number;
+  maxPlayers: number;
   playerCount: number;
   playerNames: string[];
-  isFinished: boolean;
   winnerName?: string;
+  status: "live" | "forfeit" | "inactive";
 }
+
+const statusOrder: Record<LiveGame["status"], number> = {
+  live: 0,
+  forfeit: 1,
+  inactive: 2,
+};
 
 const LiveGames = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState<LiveGame[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchLiveGames = async () => {
-    // Get all in_progress rooms (includes finished ones whose status wasn't updated)
+  const fetchLiveGames = useCallback(async () => {
+    setLoading(true);
+
     const { data: rooms } = await supabase
       .from("game_rooms")
       .select("*")
-      .eq("status", "in_progress")
+      .in("status", ["in_progress", "finished", "cancelled"])
       .order("created_at", { ascending: false });
 
     if (!rooms || rooms.length === 0) {
@@ -37,92 +44,86 @@ const LiveGames = () => {
 
     const roomIds = rooms.map((r) => r.id);
 
-    // Get game states to check which are finished (winner set in token_positions JSON)
-    const { data: gameStates } = await supabase
-      .from("game_states")
-      .select("room_id, token_positions")
-      .in("room_id", roomIds);
-
-    const { data: players } = await supabase
-      .from("room_players")
-      .select("*")
-      .in("room_id", roomIds);
+    const [{ data: gameStates }, { data: players }] = await Promise.all([
+      supabase.from("game_states").select("room_id, token_positions").in("room_id", roomIds),
+      supabase.from("room_players").select("*").in("room_id", roomIds),
+    ]);
 
     const userIds = [...new Set((players || []).map((p) => p.user_id))];
-    let profilesMap: Record<string, string> = {};
+    const profilesMap: Record<string, string> = {};
+
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name, phone")
         .in("user_id", userIds);
+
       profiles?.forEach((p) => {
         profilesMap[p.user_id] = p.display_name || p.phone.slice(-4);
       });
     }
 
-    const liveGames: LiveGame[] = rooms.map((room) => {
+    const parsedGames: LiveGame[] = rooms.map((room) => {
       const roomPlayers = (players || []).filter((p) => p.room_id === room.id);
       const gs = gameStates?.find((g) => g.room_id === room.id);
       const tokenData = gs?.token_positions as any;
-      const isFinished = tokenData?.turnPhase === "finished" || tokenData?.winner !== null && tokenData?.winner !== undefined;
-      
+
+      const hasWinner = typeof tokenData?.winner === "number";
+      const stateFinished = tokenData?.turnPhase === "finished" || hasWinner;
+      const isInactive = room.status !== "in_progress" || stateFinished;
+      const isForfeit = isInactive && roomPlayers.length < room.max_players;
+
       let winnerName: string | undefined;
-      if (isFinished && tokenData?.winner !== null && tokenData?.winner !== undefined) {
+      if (hasWinner) {
         const winnerSeat = tokenData.winner as number;
         const colorOrder = tokenData.colorOrder as number[] | undefined;
-        // Find the player at the winner seat
-        if (colorOrder && roomPlayers.length > 0) {
-          const winnerColorIdx = colorOrder[winnerSeat];
-          const winnerPlayer = roomPlayers.find((p) => p.color_index === winnerColorIdx);
+
+        if (Array.isArray(colorOrder) && colorOrder[winnerSeat] !== undefined) {
+          const winnerColor = colorOrder[winnerSeat];
+          const winnerPlayer = roomPlayers.find((p) => p.color_index === winnerColor);
           if (winnerPlayer) {
             winnerName = profilesMap[winnerPlayer.user_id] || "Bot";
-          } else {
-            // Fallback: use seat order
-            winnerName = roomPlayers[winnerSeat]
-              ? profilesMap[roomPlayers[winnerSeat].user_id] || "Bot"
-              : "Unknown";
           }
+        }
+
+        if (!winnerName && roomPlayers[winnerSeat]) {
+          winnerName = profilesMap[roomPlayers[winnerSeat].user_id] || "Bot";
         }
       }
 
       return {
         id: room.id,
         code: room.code,
-        bet_amount: room.bet_amount,
-        max_players: room.max_players,
+        betAmount: room.bet_amount,
+        maxPlayers: room.max_players,
         playerCount: roomPlayers.length,
         playerNames: roomPlayers.map((p) => profilesMap[p.user_id] || "Bot"),
-        isFinished: !!isFinished,
         winnerName,
+        status: !isInactive ? "live" : isForfeit ? "forfeit" : "inactive",
       };
     });
 
-    // Sort: active first, finished last
-    liveGames.sort((a, b) => (a.isFinished === b.isFinished ? 0 : a.isFinished ? 1 : -1));
-
-    setGames(liveGames);
+    parsedGames.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+    setGames(parsedGames);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchLiveGames();
 
     const channel = supabase
       .channel("live-games")
-      .on("postgres_changes", { event: "*", schema: "public", table: "game_rooms" }, () => {
-        fetchLiveGames();
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_states" }, () => {
-        fetchLiveGames();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "game_rooms" }, fetchLiveGames)
+      .on("postgres_changes", { event: "*", schema: "public", table: "game_states" }, fetchLiveGames)
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_players" }, fetchLiveGames)
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchLiveGames]);
 
-  const activeCount = games.filter((g) => !g.isFinished).length;
+  const activeCount = games.filter((g) => g.status === "live").length;
 
   return (
     <div className="px-4 pt-6 space-y-6">
@@ -139,49 +140,62 @@ const LiveGames = () => {
       ) : games.length === 0 ? (
         <div className="glass rounded-xl p-8 text-center space-y-2">
           <Radio className="w-10 h-10 text-muted-foreground mx-auto opacity-30" />
-          <p className="text-muted-foreground">No live games right now</p>
-          <p className="text-xs text-muted-foreground">Games will appear here when players start playing</p>
+          <p className="text-muted-foreground">No games yet</p>
+          <p className="text-xs text-muted-foreground">Games will appear here as they start and finish</p>
         </div>
       ) : (
         <div className="space-y-3">
           {games.map((game) => (
             <div
               key={game.id}
-              className={`glass rounded-xl p-4 space-y-3 animate-slide-up ${game.isFinished ? "opacity-60" : ""}`}
+              className={`glass rounded-xl p-4 space-y-3 animate-slide-up ${game.status === "live" ? "" : "opacity-75"}`}
             >
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-heading font-bold text-lg">#{game.code}</span>
-                    {game.isFinished ? (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <XCircle className="w-3 h-3" />
-                        FINISHED
-                      </span>
-                    ) : (
+
+                    {game.status === "live" && (
                       <span className="flex items-center gap-1 text-xs text-accent">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                         LIVE
                       </span>
                     )}
+
+                    {game.status === "forfeit" && (
+                      <span className="flex items-center gap-1 text-xs text-destructive">
+                        <XCircle className="w-3 h-3" />
+                        FORFEIT
+                      </span>
+                    )}
+
+                    {game.status === "inactive" && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <XCircle className="w-3 h-3" />
+                        INACTIVE
+                      </span>
+                    )}
                   </div>
+
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                     <div className="flex items-center gap-1">
                       <Users className="w-3.5 h-3.5" />
                       <span>{game.playerCount}P</span>
                     </div>
-                    <CoinBalance amount={game.bet_amount} size="sm" />
+                    <CoinBalance amount={game.betAmount} size="sm" />
                     <span className="text-xs">
-                      Pot: <CoinBalance amount={game.bet_amount * game.max_players} size="sm" className="inline-flex" />
+                      Pot: <CoinBalance amount={game.betAmount * game.maxPlayers} size="sm" className="inline-flex" />
                     </span>
                   </div>
-                  {game.isFinished && game.winnerName && (
+
+                  {game.winnerName && (
                     <div className="flex items-center gap-1 mt-1 text-xs text-accent">
                       <Trophy className="w-3 h-3" />
-                      <span className="font-heading font-bold">{game.winnerName} won!</span>
+                      <span className="font-heading font-bold">{game.winnerName} won</span>
                     </div>
                   )}
                 </div>
+
                 <Button
                   size="sm"
                   variant="outline"
@@ -189,18 +203,23 @@ const LiveGames = () => {
                   onClick={() => navigate(`/game/${game.id}`)}
                 >
                   <Eye className="w-3.5 h-3.5 mr-1" />
-                  {game.isFinished ? "View" : "Spectate"}
+                  {game.status === "live" ? "Spectate" : "View"}
                 </Button>
               </div>
+
               <div className="flex flex-wrap gap-1">
-                {game.playerNames.map((name, i) => (
-                  <span
-                    key={i}
-                    className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground"
-                  >
-                    {name}
-                  </span>
-                ))}
+                {game.playerNames.length === 0 ? (
+                  <span className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground">No players</span>
+                ) : (
+                  game.playerNames.map((name, i) => (
+                    <span
+                      key={i}
+                      className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground"
+                    >
+                      {name}
+                    </span>
+                  ))
+                )}
               </div>
             </div>
           ))}
