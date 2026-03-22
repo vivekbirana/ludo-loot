@@ -10,6 +10,7 @@ import {
 } from "@/game/ludoEngine";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
+import { playDiceRollSound } from "@/utils/sounds";
 
 export function useGamePlay(roomId: string | null) {
   const { user } = useAuth();
