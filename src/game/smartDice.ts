@@ -228,13 +228,22 @@ export function smartRollDice(state: GameState, seat: number): number {
     dramatic[i] * blendWeights.dramatic
   );
 
+  // If player already rolled two consecutive 6s, force no 6
+  const prevSixes = consecutiveSixes[seat] || 0;
+  if (prevSixes >= 2) {
+    // Zero out the 6 probability
+    blended[5] = 0;
+  }
+
   const finalProbs = normalize(blended);
   const result = weightedChoice(finalProbs);
 
-  // Update anti-drought streak
+  // Update consecutive sixes tracker
   if (result === 6) {
+    consecutiveSixes[seat] = (consecutiveSixes[seat] || 0) + 1;
     resetStreak(seat);
   } else {
+    consecutiveSixes[seat] = 0;
     nonSixStreak[seat] = (nonSixStreak[seat] || 0) + 1;
   }
 
