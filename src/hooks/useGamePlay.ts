@@ -313,6 +313,8 @@ export function useGamePlay(roomId: string | null) {
       addLog(gameState.currentTurn, 0, "auto-forfeited (5 skips)", gameState);
       toast.error("Player auto-forfeited after 5 missed turns!");
       await saveGameState(forfeitState);
+      // Also mark room as finished
+      await supabase.from("game_rooms").update({ status: "finished" }).eq("id", roomId);
       return;
     }
 
