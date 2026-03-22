@@ -33,6 +33,7 @@ const Play = () => {
     joinRoom,
     joinByCode,
     toggleReady,
+    selectColor,
     leaveRoom,
     startGame,
     fillWithBots,
