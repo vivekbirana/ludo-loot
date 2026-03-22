@@ -87,7 +87,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               fill="none"
               stroke={PLAYER_COLORS[idx]}
               strokeWidth="1.5"
-              opacity={0.4}
+              opacity={0.5}
               rx="8"
             />
             {/* Inner home area */}
