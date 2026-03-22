@@ -79,7 +79,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 width={cellSize * 6}
                 height={cellSize * 6}
                 fill={PLAYER_COLORS[idx]}
-                opacity={0.08}
+                opacity={1}
               />
               {/* Grid overlay */}
               {Array.from({ length: 6 }, (_, row) =>
