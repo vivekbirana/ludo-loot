@@ -299,6 +299,8 @@ export function useGamePlay(roomId: string | null) {
   };
 
   const playBotTurn = async (state: GameState) => {
+    playDiceRollSound(500);
+    await new Promise((r) => setTimeout(r, 600));
     const dice = rollDice();
     let newState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
 
