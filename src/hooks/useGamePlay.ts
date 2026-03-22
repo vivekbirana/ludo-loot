@@ -293,15 +293,38 @@ export function useGamePlay(roomId: string | null) {
   const handleAutoSkip = async () => {
     if (!gameState || !roomId) return;
 
+    const MAX_SKIPS = 5;
+    const skipCounts = [...(gameState.skipCounts || Array(gameState.playerCount).fill(0))];
+    skipCounts[gameState.currentTurn] = (skipCounts[gameState.currentTurn] || 0) + 1;
+
+    addLog(gameState.currentTurn, 0, `timed out (${skipCounts[gameState.currentTurn]}/${MAX_SKIPS})`, gameState);
+
+    // Auto-forfeit: if player skipped 5 times, opponent wins
+    if (skipCounts[gameState.currentTurn] >= MAX_SKIPS) {
+      const winnerSeat = (gameState.currentTurn + 1) % gameState.playerCount;
+      const forfeitState: GameState = {
+        ...gameState,
+        turnPhase: "finished",
+        winner: winnerSeat,
+        diceValue: null,
+        skipCounts,
+      };
+
+      addLog(gameState.currentTurn, 0, "auto-forfeited (5 skips)", gameState);
+      toast.error("Player auto-forfeited after 5 missed turns!");
+      await saveGameState(forfeitState);
+      return;
+    }
+
     const newState: GameState = {
       ...gameState,
       currentTurn: (gameState.currentTurn + 1) % gameState.playerCount,
       turnPhase: "rolling",
       diceValue: null,
       consecutiveSixes: 0,
+      skipCounts,
     };
 
-    addLog(gameState.currentTurn, 0, "timed out, skipped turn", gameState);
     await saveGameState(newState);
   };
 
