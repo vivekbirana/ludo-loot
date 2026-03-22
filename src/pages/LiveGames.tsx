@@ -46,7 +46,6 @@ const LiveGames = () => {
       return !gs || !gs.winner_id;
     });
 
-    const roomIds = rooms.map((r) => r.id);
     if (activeRoomIds.length === 0) {
       setGames([]);
       setLoading(false);
