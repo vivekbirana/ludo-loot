@@ -1,4 +1,4 @@
-import { Check, X, Crown, LogOut } from "lucide-react";
+import { Check, X, Crown, LogOut, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CoinBalance from "@/components/CoinBalance";
 import { GameRoom } from "@/hooks/useGameRooms";
