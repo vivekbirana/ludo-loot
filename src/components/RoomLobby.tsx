@@ -1,4 +1,4 @@
-import { Check, X, Crown, LogOut } from "lucide-react";
+import { Check, X, Crown, LogOut, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CoinBalance from "@/components/CoinBalance";
 import { GameRoom } from "@/hooks/useGameRooms";
@@ -10,9 +10,10 @@ interface RoomLobbyProps {
   onReady: () => void;
   onLeave: () => void;
   onStart: () => void;
+  onFillBots?: () => void;
 }
 
-const RoomLobby = ({ room, onReady, onLeave, onStart }: RoomLobbyProps) => {
+const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyProps) => {
   const { user } = useAuth();
   const isCreator = user?.id === room.created_by;
   const currentPlayer = room.players.find((p) => p.user_id === user?.id);
@@ -115,6 +116,17 @@ const RoomLobby = ({ room, onReady, onLeave, onStart }: RoomLobbyProps) => {
             )}
           >
             {currentPlayer.is_ready ? "Cancel Ready" : "I'm Ready!"}
+          </Button>
+        )}
+
+        {onFillBots && !isGameStarted && room.players.length < room.max_players && (
+          <Button
+            variant="outline"
+            onClick={onFillBots}
+            className="w-full font-heading font-bold border-dashed border-accent text-accent"
+          >
+            <Bot className="w-4 h-4 mr-2" />
+            Fill with Bots (Dev)
           </Button>
         )}
 

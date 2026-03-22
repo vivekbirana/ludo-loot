@@ -273,6 +273,28 @@ export function useGameRooms() {
     toast.success("Game started!");
   };
 
+  const fillWithBots = async () => {
+    if (!user || !currentRoom) return;
+
+    const slotsNeeded = currentRoom.max_players - currentRoom.players.length;
+    if (slotsNeeded <= 0) {
+      toast.info("Room is already full");
+      return;
+    }
+
+    const { data, error } = await supabase.functions.invoke("add-bots", {
+      body: { room_id: currentRoom.id, count: slotsNeeded },
+    });
+
+    if (error) {
+      toast.error("Failed to add bots");
+      console.error(error);
+      return;
+    }
+
+    toast.success(`Added ${data.bots_added} bot(s)!`);
+  };
+
   return {
     rooms,
     currentRoom,
@@ -283,5 +305,6 @@ export function useGameRooms() {
     toggleReady,
     leaveRoom,
     startGame,
+    fillWithBots,
   };
 }
