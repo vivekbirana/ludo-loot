@@ -24,6 +24,8 @@ export function useGamePlay(roomId: string | null) {
   const [roomCode, setRoomCode] = useState("");
   const [betAmount, setBetAmount] = useState(0);
   const animatingRef = useRef(false);
+  const botPlayingRef = useRef(false);
+  const playerNamesRef = useRef<string[]>([]);
 
   const loadGameState = useCallback(async () => {
     if (!roomId) return;
