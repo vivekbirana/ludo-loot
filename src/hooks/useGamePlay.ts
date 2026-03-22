@@ -10,6 +10,7 @@ import {
   getIntermediateSteps,
   PLAYER_NAMES,
 } from "@/game/ludoEngine";
+import { smartRollDice } from "@/game/smartDice";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 import { playDiceRollSound, playTokenMoveSound } from "@/utils/sounds";
@@ -352,7 +353,7 @@ export function useGamePlay(roomId: string | null) {
     setRolling(true);
     await new Promise((r) => setTimeout(r, 600));
 
-    const dice = rollDice();
+    const dice = smartRollDice(gameState, playerIndex);
     const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving" };
     await saveGameState(diceState);
     setRolling(false);
@@ -394,7 +395,7 @@ export function useGamePlay(roomId: string | null) {
     // Use the passed state directly, not gameState from closure
     playDiceRollSound(500);
     await new Promise((r) => setTimeout(r, 600));
-    const dice = rollDice();
+    const dice = smartRollDice(state, state.currentTurn);
     const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
     await saveGameState(diceState);
 
