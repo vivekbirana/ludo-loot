@@ -259,6 +259,17 @@ export function useGamePlay(roomId: string | null) {
     }
   };
 
+  const handleQuitGame = async () => {
+    if (!roomId || !user) return;
+    // Remove player from room
+    await supabase
+      .from("room_players")
+      .delete()
+      .eq("room_id", roomId)
+      .eq("user_id", user.id);
+    toast.info("You left the game and forfeited your bet.");
+  };
+
   return {
     gameState,
     playerIndex,
@@ -267,7 +278,9 @@ export function useGamePlay(roomId: string | null) {
     turnTimer,
     isSpectator,
     roomCode,
+    betAmount,
     handleRollDice,
     handleTokenClick,
+    handleQuitGame,
   };
 }
