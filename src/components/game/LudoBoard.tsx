@@ -189,24 +189,28 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
           fill={PLAYER_COLORS[0]}
           opacity={1}
         />
+        <text x={6.5 * cellSize} y={7.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
         {/* Green: enters from top, triangle points down */}
         <polygon
           points={`${6 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${6 * cellSize}`}
           fill={PLAYER_COLORS[1]}
           opacity={1}
         />
+        <text x={7.5 * cellSize} y={6.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
         {/* Yellow: enters from right, triangle points left */}
         <polygon
           points={`${9 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[2]}
           opacity={1}
         />
+        <text x={8.5 * cellSize} y={7.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
         {/* Blue: enters from bottom, triangle points up */}
         <polygon
           points={`${6 * cellSize},${9 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[3]}
           opacity={1}
         />
+        <text x={7.5 * cellSize} y={8.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
 
         {/* Tokens */}
         {gameState.tokens.map((playerTokens, playerIdx) =>
