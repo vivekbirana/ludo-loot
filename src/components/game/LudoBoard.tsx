@@ -173,8 +173,8 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 y={cell.row * cellSize}
                 width={cellSize}
                 height={cellSize}
-                fill={PLAYER_COLORS[playerIdx]}
-                stroke="black"
+                fill={PLAYER_BG[playerIdx]}
+                stroke="rgba(0,0,0,0.15)"
                 strokeWidth="0.5"
               />
               <text
@@ -183,8 +183,9 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize="6"
-                fill="rgba(255,255,255,0.7)"
+                fill={PLAYER_COLORS[playerIdx]}
                 fontFamily="monospace"
+                opacity={0.6}
               >
                 H{cellIdx}
               </text>
