@@ -25,7 +25,7 @@ export const HOME_BASE_ORIGINS = [
 ];
 
 // Starting cell index on the main path for each player
-export const START_POSITIONS = [0, 13, 26, 39];
+export const START_POSITIONS = [13, 26, 39, 0];
 
 // Safe zone positions on the main path (0-indexed)
 export const SAFE_POSITIONS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
