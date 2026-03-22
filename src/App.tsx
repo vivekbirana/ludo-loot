@@ -8,6 +8,8 @@ import PlayerLayout from "@/components/layout/PlayerLayout";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import Index from "./pages/Index";
 import Play from "./pages/Play";
+import LiveGames from "./pages/LiveGames";
+import GameScreen from "./pages/GameScreen";
 import History from "./pages/History";
 import Ranking from "./pages/Ranking";
 import Profile from "./pages/Profile";
@@ -45,10 +47,14 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
             
+            {/* Game screen - no bottom nav */}
+            <Route path="/game/:roomId" element={<ProtectedRoute><GameScreen /></ProtectedRoute>} />
+            
             {/* Player routes - protected */}
             <Route element={<ProtectedRoute><PlayerLayout /></ProtectedRoute>}>
               <Route path="/" element={<Index />} />
               <Route path="/play" element={<Play />} />
+              <Route path="/live" element={<LiveGames />} />
               <Route path="/history" element={<History />} />
               <Route path="/ranking" element={<Ranking />} />
               <Route path="/profile" element={<Profile />} />

@@ -1,10 +1,11 @@
-import { Home, Gamepad2, Clock, Trophy, User } from "lucide-react";
+import { Home, Gamepad2, Radio, Clock, Trophy, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Gamepad2, label: "Play", path: "/play" },
+  { icon: Radio, label: "Live", path: "/live" },
   { icon: Clock, label: "History", path: "/history" },
   { icon: Trophy, label: "Ranking", path: "/ranking" },
   { icon: User, label: "Profile", path: "/profile" },
