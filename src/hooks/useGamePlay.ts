@@ -345,6 +345,13 @@ export function useGamePlay(roomId: string | null) {
         turn_start_at: new Date().toISOString(),
       })
       .eq("room_id", roomId);
+
+    if (newState.turnPhase === "finished" || newState.winner !== null) {
+      await supabase
+        .from("game_rooms")
+        .update({ status: "finished" })
+        .eq("id", roomId);
+    }
   };
 
   const animateTokenMove = async (
