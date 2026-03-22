@@ -187,7 +187,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         <polygon
           points={`${6 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${6 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[0]}
-          opacity={0.4}
+          opacity={1}
         />
         {/* Green: enters from top, triangle points down */}
         <polygon
