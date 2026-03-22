@@ -44,9 +44,9 @@ const Profile = () => {
     navigate("/login", { replace: true });
   };
 
-  const phone = user?.phone || "";
+  const phone = user?.user_metadata?.phone || user?.phone || "";
   const maskedPhone = phone
-    ? `+91 •••••••${phone.slice(-3)}`
+    ? `${phone.slice(0, 3)} •••••••${phone.slice(-3)}`
     : "";
 
   const formatDate = (dateStr: string) => {
