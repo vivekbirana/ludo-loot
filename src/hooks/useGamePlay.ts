@@ -353,7 +353,7 @@ export function useGamePlay(roomId: string | null) {
     setRolling(true);
     await new Promise((r) => setTimeout(r, 600));
 
-    const dice = rollDice();
+    const dice = smartRollDice(gameState, playerIndex);
     const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving" };
     await saveGameState(diceState);
     setRolling(false);
