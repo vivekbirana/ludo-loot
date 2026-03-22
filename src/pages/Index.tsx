@@ -4,8 +4,26 @@ import { Button } from "@/components/ui/button";
 import CoinBalance from "@/components/CoinBalance";
 import StatCard from "@/components/StatCard";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const Index = () => {
+  const { user } = useAuth();
+
+  const { data: wallet } = useQuery({
+    queryKey: ["wallet", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("wallets")
+        .select("*")
+        .eq("user_id", user!.id)
+        .single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   return (
     <div className="px-4 pt-6 space-y-6">
       {/* Header */}
@@ -14,7 +32,7 @@ const Index = () => {
           <p className="text-sm text-muted-foreground">Welcome back,</p>
           <h1 className="text-2xl font-heading font-bold">Player</h1>
         </div>
-        <CoinBalance amount={1000} size="md" />
+        <CoinBalance amount={wallet?.balance ?? 0} size="md" />
       </div>
 
       {/* Hero Card */}
