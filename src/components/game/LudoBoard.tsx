@@ -65,7 +65,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         className="rounded-xl"
       >
         {/* Background */}
-        <rect width={boardWidth} height={boardWidth} fill="hsl(220, 15%, 12%)" rx="12" />
+        <rect width={boardWidth} height={boardWidth} fill="hsl(40, 30%, 95%)" rx="12" />
 
         {/* Home bases */}
         {HOME_BASE_ORIGINS.map((origin, idx) => (
