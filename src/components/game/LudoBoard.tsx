@@ -217,8 +217,8 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                   cy={0}
                   r={cellSize * 0.32}
                   fill={color}
-                  stroke={isMovable ? "#fff" : color}
-                  strokeWidth={isMovable ? 2 : 1}
+                  stroke={isMovable ? "#fff" : "#000"}
+                  strokeWidth={isMovable ? 2 : 1.2}
                   opacity={isCurrentTurn ? 1 : 0.7}
                 />
                 {/* Token inner */}
