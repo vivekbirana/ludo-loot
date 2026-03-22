@@ -255,4 +255,7 @@ export function resetAllStreaks() {
   for (const key of Object.keys(nonSixStreak)) {
     delete nonSixStreak[Number(key)];
   }
+  for (const key of Object.keys(consecutiveSixes)) {
+    delete consecutiveSixes[Number(key)];
+  }
 }
