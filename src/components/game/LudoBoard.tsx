@@ -68,55 +68,50 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         <rect width={boardWidth} height={boardWidth} fill="hsl(40, 30%, 95%)" rx="12" />
 
         {/* Home bases */}
-        {HOME_BASE_ORIGINS.map((origin, idx) => (
-          <g key={`home-${idx}`}>
-            <rect
-              x={origin.col * cellSize}
-              y={origin.row * cellSize}
-              width={cellSize * 6}
-              height={cellSize * 6}
-              fill={PLAYER_COLORS[idx]}
-              opacity={0.2}
-            />
-            <rect
-              x={origin.col * cellSize}
-              y={origin.row * cellSize}
-              width={cellSize * 6}
-              height={cellSize * 6}
-              fill="none"
-              stroke={PLAYER_COLORS[idx]}
-              strokeWidth="1.5"
-              opacity={0.5}
-            />
-            {/* Grid overlay */}
-            {Array.from({ length: 6 }, (_, row) =>
-              Array.from({ length: 6 }, (_, col) => (
-                <g key={`grid-${idx}-${row}-${col}`}>
-                  <rect
-                    x={(origin.col + col) * cellSize}
-                    y={(origin.row + row) * cellSize}
-                    width={cellSize}
-                    height={cellSize}
-                    fill="none"
-                    stroke="rgba(0,0,0,0.15)"
-                    strokeWidth="0.5"
-                  />
-                  <text
-                    x={(origin.col + col) * cellSize + cellSize / 2}
-                    y={(origin.row + row) * cellSize + cellSize / 2 + 1}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize="5"
-                    fill="rgba(0,0,0,0.3)"
-                    fontFamily="monospace"
-                  >
-                    {row},{col}
-                  </text>
-                </g>
-              ))
-            )}
-          </g>
-        ))}
+        {HOME_BASE_ORIGINS.map((origin, idx) => {
+          const isBorder = (row: number, col: number) =>
+            row === 0 || row === 5 || col === 0 || col === 5;
+          return (
+            <g key={`home-${idx}`}>
+              <rect
+                x={origin.col * cellSize}
+                y={origin.row * cellSize}
+                width={cellSize * 6}
+                height={cellSize * 6}
+                fill={PLAYER_COLORS[idx]}
+                opacity={0.08}
+              />
+              {/* Grid overlay */}
+              {Array.from({ length: 6 }, (_, row) =>
+                Array.from({ length: 6 }, (_, col) => (
+                  <g key={`grid-${idx}-${row}-${col}`}>
+                    <rect
+                      x={(origin.col + col) * cellSize}
+                      y={(origin.row + row) * cellSize}
+                      width={cellSize}
+                      height={cellSize}
+                      fill={isBorder(row, col) ? PLAYER_COLORS[idx] : "none"}
+                      opacity={isBorder(row, col) ? 0.35 : 1}
+                      stroke="rgba(0,0,0,0.15)"
+                      strokeWidth="0.5"
+                    />
+                    <text
+                      x={(origin.col + col) * cellSize + cellSize / 2}
+                      y={(origin.row + row) * cellSize + cellSize / 2 + 1}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize="5"
+                      fill="rgba(0,0,0,0.3)"
+                      fontFamily="monospace"
+                    >
+                      {row},{col}
+                    </text>
+                  </g>
+                ))
+              )}
+            </g>
+          );
+        })}
 
         {/* Main path cells */}
         {MAIN_PATH.map((cell, idx) => {
