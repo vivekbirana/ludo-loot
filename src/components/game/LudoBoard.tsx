@@ -113,12 +113,11 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 y={cell.row * cellSize + 1}
                 width={cellSize - 2}
                 height={cellSize - 2}
-                fill={isSafe ? "hsl(155, 50%, 88%)" : "hsl(40, 20%, 88%)"}
-                stroke={isSafe ? "hsl(155, 40%, 65%)" : "hsl(40, 10%, 75%)"}
+                fill="white"
+                stroke="black"
                 strokeWidth="0.5"
                 rx="2"
               />
-              {/* Dev: path index number */}
               <text
                 x={cell.col * cellSize + cellSize / 2}
                 y={cell.row * cellSize + cellSize / 2 + (isSafe ? -3 : 1)}
