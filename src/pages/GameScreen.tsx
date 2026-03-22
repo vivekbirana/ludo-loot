@@ -136,7 +136,7 @@ const GameScreen = () => {
       </div>
 
       {/* Dice + Controls */}
-      <div className="px-4 py-4">
+      <div className="px-4 py-4 min-h-[140px] flex items-center justify-center">
         {isFinished ? (
           <div className="glass rounded-xl p-6 text-center space-y-3">
             <h2 className="text-2xl font-heading font-bold">
