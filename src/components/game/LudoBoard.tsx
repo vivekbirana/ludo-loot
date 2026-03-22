@@ -97,7 +97,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               width={cellSize * 5}
               height={cellSize * 5}
               fill={PLAYER_COLORS[idx]}
-              opacity={0.08}
+              opacity={0.12}
               rx="6"
             />
           </g>
