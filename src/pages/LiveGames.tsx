@@ -32,11 +32,10 @@ const formatTimeAgo = (iso: string) => {
   return `${days}d ago`;
 };
 
-const FILTER_OPTIONS: { label: string; value: GameStatus | "all" }[] = [
+const FILTER_OPTIONS: { label: string; value: "all" | "live" | "completed" }[] = [
   { label: "All", value: "all" },
   { label: "Live", value: "live" },
-  { label: "Completed", value: "inactive" },
-  { label: "Forfeit", value: "forfeit" },
+  { label: "Completed", value: "completed" },
 ];
 
 const LiveGames = () => {
