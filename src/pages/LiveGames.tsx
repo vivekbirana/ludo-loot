@@ -20,10 +20,12 @@ const LiveGames = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchLiveGames = async () => {
+    // Get in_progress rooms that have game states without a winner
     const { data: rooms } = await supabase
       .from("game_rooms")
       .select("*")
       .eq("status", "in_progress")
+      .is("winner_id", null)
       .order("created_at", { ascending: false });
 
     if (!rooms || rooms.length === 0) {
@@ -31,6 +33,18 @@ const LiveGames = () => {
       setLoading(false);
       return;
     }
+
+    // Filter out rooms with no active game state (winner already set in game_states)
+    const roomIds = rooms.map((r) => r.id);
+    const { data: gameStates } = await supabase
+      .from("game_states")
+      .select("room_id, winner_id")
+      .in("room_id", roomIds);
+
+    const activeRoomIds = roomIds.filter((rid) => {
+      const gs = gameStates?.find((g) => g.room_id === rid);
+      return !gs || !gs.winner_id;
+    });
 
     const roomIds = rooms.map((r) => r.id);
     const { data: players } = await supabase
