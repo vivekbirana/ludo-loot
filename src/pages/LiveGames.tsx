@@ -162,6 +162,7 @@ const LiveGames = () => {
       : filter === "live"
         ? games.filter((g) => g.status === "live")
         : games.filter((g) => g.status !== "live"); // completed includes forfeit + inactive
+  const activeCount = games.filter((g) => g.status === "live").length;
 
   return (
     <div className="px-4 pt-6 space-y-4">
