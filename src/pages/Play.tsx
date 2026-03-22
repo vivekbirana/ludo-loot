@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,8 +48,17 @@ const Play = () => {
     setRoomCode("");
   };
 
+  const navigate = useNavigate();
+
+  // Navigate to game screen when game starts
+  useEffect(() => {
+    if (currentRoom && currentRoom.status === "in_progress") {
+      navigate(`/game/${currentRoom.id}`);
+    }
+  }, [currentRoom?.status, currentRoom?.id, navigate]);
+
   // Show lobby if user is in a room
-  if (currentRoom) {
+  if (currentRoom && currentRoom.status !== "in_progress") {
     return (
       <div className="px-4 pt-6">
         <RoomLobby
