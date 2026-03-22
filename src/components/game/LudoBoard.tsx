@@ -56,6 +56,8 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
     return cells;
   }, []);
 
+  const getSeatColorIndex = (seat: number) => gameState.colorOrder?.[seat] ?? seat;
+
   return (
     <div className="relative mx-auto" style={{ width: boardWidth, height: boardWidth }}>
       <svg
