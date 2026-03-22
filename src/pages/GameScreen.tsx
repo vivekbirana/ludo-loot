@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, Timer, LogOut } from "lucide-react";
+import { ArrowLeft, Eye, Timer, LogOut, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -17,6 +17,7 @@ import DiceRoller from "@/components/game/DiceRoller";
 import PlayerInfoBar from "@/components/game/PlayerInfoBar";
 import { useGamePlay } from "@/hooks/useGamePlay";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/game/ludoEngine";
+import { useState } from "react";
 
 const GameScreen = () => {
   const { roomId } = useParams<{ roomId: string }>();
