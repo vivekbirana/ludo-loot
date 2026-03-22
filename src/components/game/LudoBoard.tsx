@@ -205,7 +205,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         <polygon
           points={`${6 * cellSize},${9 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[3]}
-          opacity={0.4}
+          opacity={1}
         />
 
         {/* Tokens */}
