@@ -41,6 +41,7 @@ export function useGamePlay(roomId: string | null) {
   const botPlayingRef = useRef(false);
   const playerNamesRef = useRef<string[]>([]);
   const gameStateRef = useRef<GameState | null>(null);
+  const playerIndexRef = useRef<number | null>(null);
 
   // Keep refs in sync
   useEffect(() => {
@@ -50,6 +51,10 @@ export function useGamePlay(roomId: string | null) {
   useEffect(() => {
     gameStateRef.current = gameState;
   }, [gameState]);
+
+  useEffect(() => {
+    playerIndexRef.current = playerIndex;
+  }, [playerIndex]);
 
   const addLog = useCallback((playerSeat: number, dice: number, action: string, state: GameState) => {
     const colorIdx = state.colorOrder?.[playerSeat] ?? playerSeat;
