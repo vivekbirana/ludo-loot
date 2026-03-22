@@ -5,6 +5,9 @@ export const PLAYER_COLORS = ["#F56565", "#68D391", "#F6E05E", "#63B3ED"] as con
 export const PLAYER_NAMES = ["Red", "Green", "Yellow", "Blue"] as const;
 export const PLAYER_BG = ["#FFF5F5", "#F0FFF4", "#FFFFF0", "#EBF8FF"] as const;
 
+// Lighter versions of player colors for home tiles and arrows
+export const PLAYER_COLORS_LIGHT = ["#FC8181", "#9AE6B4", "#FAF089", "#90CDF4"] as const;
+
 // Standard Ludo: Red(TL) vs Yellow(BR), Green(TR) vs Blue(BL)
 // Player seating order: 0=Red(TL), 1=Green(TR), 2=Yellow(BR), 3=Blue(BL)
 
