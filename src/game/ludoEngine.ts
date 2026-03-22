@@ -226,6 +226,60 @@ export function getMovableTokens(state: GameState): number[] {
   return movable;
 }
 
+// Generate intermediate states for step-by-step animation (excludes final state)
+export function getIntermediateSteps(state: GameState, tokenIndex: number): GameState[] {
+  const { currentTurn, diceValue } = state;
+  if (diceValue === null || diceValue <= 1) return [];
+
+  const token = state.tokens[currentTurn][tokenIndex];
+  const currentColorIndex = getPlayerColorIndex(state, currentTurn);
+  const steps: GameState[] = [];
+
+  if (token.position === "home") {
+    // Coming out of home - no intermediate steps, just appear at start
+    return [];
+  }
+
+  if (token.position === "path") {
+    const homeEntry = HOME_ENTRY_POSITIONS[currentColorIndex];
+    const distToHome = ((homeEntry - token.pathIndex + 52) % 52);
+
+    // Steps before entering home column
+    const pathSteps = (distToHome > 0 && distToHome <= diceValue) ? distToHome : diceValue;
+    const actualPathSteps = (distToHome === 0) ? 0 : Math.min(pathSteps, diceValue) - 1;
+
+    for (let s = 1; s <= actualPathSteps; s++) {
+      const stepState = JSON.parse(JSON.stringify(state)) as GameState;
+      const stepToken = stepState.tokens[currentTurn][tokenIndex];
+
+      if (distToHome > 0 && distToHome <= diceValue && s >= distToHome) {
+        // Entering home column
+        const homeIdx = s - distToHome;
+        stepToken.position = "home_column";
+        stepToken.pathIndex = homeIdx;
+      } else if (distToHome === 0) {
+        stepToken.position = "home_column";
+        stepToken.pathIndex = s - 1;
+      } else {
+        stepToken.pathIndex = (token.pathIndex + s) % 52;
+      }
+      steps.push(stepState);
+    }
+  }
+
+  if (token.position === "home_column") {
+    for (let s = 1; s < diceValue; s++) {
+      const stepState = JSON.parse(JSON.stringify(state)) as GameState;
+      const stepToken = stepState.tokens[currentTurn][tokenIndex];
+      stepToken.pathIndex = token.pathIndex + s;
+      if (stepToken.pathIndex > 5) stepToken.pathIndex = 5;
+      steps.push(stepState);
+    }
+  }
+
+  return steps;
+}
+
 export function moveToken(state: GameState, tokenIndex: number): GameState {
   const newState = JSON.parse(JSON.stringify(state)) as GameState;
   const { currentTurn, diceValue, playerCount } = newState;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -7,10 +7,11 @@ import {
   rollDice,
   getMovableTokens,
   moveToken,
+  getIntermediateSteps,
 } from "@/game/ludoEngine";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
-import { playDiceRollSound } from "@/utils/sounds";
+import { playDiceRollSound, playTokenMoveSound } from "@/utils/sounds";
 
 export function useGamePlay(roomId: string | null) {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ export function useGamePlay(roomId: string | null) {
   const [isSpectator, setIsSpectator] = useState(false);
   const [roomCode, setRoomCode] = useState("");
   const [betAmount, setBetAmount] = useState(0);
+  const animatingRef = useRef(false);
 
   const loadGameState = useCallback(async () => {
     if (!roomId) return;
@@ -182,7 +184,11 @@ export function useGamePlay(roomId: string | null) {
         (payload) => {
           const newState = payload.new;
           if (newState.token_positions) {
-            setGameState(newState.token_positions as unknown as GameState);
+            const incoming = newState.token_positions as unknown as GameState;
+            // If we're the one animating, skip realtime updates (we handle locally)
+            if (!animatingRef.current) {
+              setGameState(incoming);
+            }
           }
         }
       )
@@ -243,6 +249,26 @@ export function useGamePlay(roomId: string | null) {
       .eq("room_id", roomId);
   };
 
+  // Animate token step by step through intermediate positions
+  const animateTokenMove = async (
+    baseState: GameState,
+    tokenIndex: number
+  ): Promise<GameState> => {
+    const steps = getIntermediateSteps(baseState, tokenIndex);
+    animatingRef.current = true;
+
+    for (const stepState of steps) {
+      setGameState(stepState);
+      playTokenMoveSound();
+      await new Promise((r) => setTimeout(r, 150));
+    }
+
+    // Final move
+    const finalState = moveToken(baseState, tokenIndex);
+    animatingRef.current = false;
+    return finalState;
+  };
+
   const handleRollDice = async () => {
     if (!gameState || playerIndex === null || isSpectator) return;
     if (gameState.currentTurn !== playerIndex) return;
@@ -252,27 +278,31 @@ export function useGamePlay(roomId: string | null) {
     await new Promise((r) => setTimeout(r, 600));
 
     const dice = rollDice();
-    let newState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving" };
+    // Save dice value immediately so opponent can see it
+    const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving" };
+    await saveGameState(diceState);
+    setRolling(false);
 
-    const movable = getMovableTokens(newState);
+    const movable = getMovableTokens(diceState);
     if (movable.length === 0) {
-      newState = {
-        ...newState,
-        currentTurn: (newState.currentTurn + 1) % newState.playerCount,
+      await new Promise((r) => setTimeout(r, 500));
+      const newState: GameState = {
+        ...diceState,
+        currentTurn: (diceState.currentTurn + 1) % diceState.playerCount,
         turnPhase: "rolling",
         diceValue: null,
         consecutiveSixes: 0,
       };
+      await saveGameState(newState);
+      if (newState.winner === null) scheduleBotTurn(newState);
     } else if (movable.length === 1) {
-      newState = moveToken(newState, movable[0]);
+      const finalState = await animateTokenMove(diceState, movable[0]);
+      await saveGameState(finalState);
+      if (finalState.turnPhase === "rolling" && finalState.winner === null) {
+        scheduleBotTurn(finalState);
+      }
     }
-
-    await saveGameState(newState);
-    setRolling(false);
-
-    if (newState.turnPhase === "rolling" && newState.winner === null) {
-      scheduleBotTurn(newState);
-    }
+    // If movable.length > 1, wait for user to pick a token
   };
 
   const handleTokenClick = async (tokenIndex: number) => {
@@ -283,11 +313,11 @@ export function useGamePlay(roomId: string | null) {
     const movable = getMovableTokens(gameState);
     if (!movable.includes(tokenIndex)) return;
 
-    const newState = moveToken(gameState, tokenIndex);
-    await saveGameState(newState);
+    const finalState = await animateTokenMove(gameState, tokenIndex);
+    await saveGameState(finalState);
 
-    if (newState.turnPhase === "rolling" && newState.winner === null) {
-      scheduleBotTurn(newState);
+    if (finalState.turnPhase === "rolling" && finalState.winner === null) {
+      scheduleBotTurn(finalState);
     }
   };
 
@@ -302,28 +332,38 @@ export function useGamePlay(roomId: string | null) {
     playDiceRollSound(500);
     await new Promise((r) => setTimeout(r, 600));
     const dice = rollDice();
-    let newState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
+    // Save dice value first so player can see bot's dice
+    const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
+    await saveGameState(diceState);
 
-    const movable = getMovableTokens(newState);
+    await new Promise((r) => setTimeout(r, 400));
+
+    const movable = getMovableTokens(diceState);
     if (movable.length === 0) {
-      newState = {
-        ...newState,
-        currentTurn: (newState.currentTurn + 1) % newState.playerCount,
+      const newState: GameState = {
+        ...diceState,
+        currentTurn: (diceState.currentTurn + 1) % diceState.playerCount,
         turnPhase: "rolling",
         diceValue: null,
         consecutiveSixes: 0,
       };
+      await saveGameState(newState);
+      if (newState.winner === null) {
+        const nextName = playerNames[newState.currentTurn];
+        if (nextName === "Bot") {
+          setTimeout(() => playBotTurn(newState), 1000);
+        }
+      }
     } else {
       const chosen = movable[Math.floor(Math.random() * movable.length)];
-      newState = moveToken(newState, chosen);
-    }
+      const finalState = await animateTokenMove(diceState, chosen);
+      await saveGameState(finalState);
 
-    await saveGameState(newState);
-
-    if (newState.turnPhase === "rolling" && newState.winner === null) {
-      const nextName = playerNames[newState.currentTurn];
-      if (nextName === "Bot") {
-        setTimeout(() => playBotTurn(newState), 1000);
+      if (finalState.turnPhase === "rolling" && finalState.winner === null) {
+        const nextName = playerNames[finalState.currentTurn];
+        if (nextName === "Bot") {
+          setTimeout(() => playBotTurn(finalState), 1000);
+        }
       }
     }
   };
