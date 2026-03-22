@@ -106,6 +106,9 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         {/* Main path cells */}
         {MAIN_PATH.map((cell, idx) => {
           const isSafe = SAFE_POSITIONS.has(idx);
+          // Color start tiles with their player's color
+          const startColorMap: Record<number, string> = { 0: PLAYER_COLORS[0], 13: PLAYER_COLORS[1], 26: PLAYER_COLORS[2], 39: PLAYER_COLORS[3] };
+          const tileFill = startColorMap[idx] || "white";
           return (
             <g key={`path-${idx}`}>
               <rect
@@ -113,7 +116,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 y={cell.row * cellSize}
                 width={cellSize}
                 height={cellSize}
-                fill="white"
+                fill={tileFill}
                 stroke="black"
                 strokeWidth="0.5"
               />
@@ -123,7 +126,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize="6"
-                fill="rgba(0,0,0,0.35)"
+                fill={startColorMap[idx] ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.35)"}
                 fontFamily="monospace"
               >
                 {idx}
@@ -142,7 +145,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                   <polygon
                     points={points}
                     fill="none"
-                    stroke="rgba(0,0,0,0.25)"
+                    stroke={startColorMap[idx] ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.25)"}
                     strokeWidth="1.2"
                   />
                 );
@@ -156,14 +159,13 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
           column.slice(0, 5).map((cell, cellIdx) => (
             <g key={`hc-${playerIdx}-${cellIdx}`}>
               <rect
-                x={cell.col * cellSize + 1}
-                y={cell.row * cellSize + 1}
-                width={cellSize - 2}
-                height={cellSize - 2}
+                x={cell.col * cellSize}
+                y={cell.row * cellSize}
+                width={cellSize}
+                height={cellSize}
                 fill={PLAYER_COLORS[playerIdx]}
-                stroke={PLAYER_COLORS[playerIdx]}
+                stroke="black"
                 strokeWidth="0.5"
-                rx="2"
               />
               <text
                 x={cell.col * cellSize + cellSize / 2}
