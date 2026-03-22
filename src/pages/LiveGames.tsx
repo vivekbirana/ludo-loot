@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Users, Radio, Trophy, XCircle, Clock } from "lucide-react";
+import { Eye, Users, Radio, Trophy, XCircle, Clock, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import CoinBalance from "@/components/CoinBalance";
 import { PLAYER_NAMES } from "@/game/ludoEngine";
+
+type GameStatus = "live" | "forfeit" | "inactive";
 
 interface LiveGame {
   id: string;
@@ -15,15 +17,9 @@ interface LiveGame {
   playerNames: string[];
   winnerName?: string;
   resultText: string;
-  status: "live" | "forfeit" | "inactive";
+  status: GameStatus;
   createdAt: string;
 }
-
-const statusOrder: Record<LiveGame["status"], number> = {
-  live: 0,
-  forfeit: 1,
-  inactive: 2,
-};
 
 const formatTimeAgo = (iso: string) => {
   const diff = Date.now() - new Date(iso).getTime();
@@ -36,10 +32,18 @@ const formatTimeAgo = (iso: string) => {
   return `${days}d ago`;
 };
 
+const FILTER_OPTIONS: { label: string; value: GameStatus | "all" }[] = [
+  { label: "All", value: "all" },
+  { label: "Live", value: "live" },
+  { label: "Completed", value: "inactive" },
+  { label: "Forfeit", value: "forfeit" },
+];
+
 const LiveGames = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState<LiveGame[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<GameStatus | "all">("all");
 
   const fetchLiveGames = useCallback(async () => {
     setLoading(true);
@@ -100,7 +104,6 @@ const LiveGames = () => {
           if (winnerPlayer) {
             winnerName = profilesMap[winnerPlayer.user_id] || "Bot";
           } else {
-            // Player left (forfeit) — use color name
             winnerName = PLAYER_NAMES[winnerColor] || "Player";
           }
         }
@@ -134,7 +137,7 @@ const LiveGames = () => {
       };
     });
 
-    parsedGames.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+    // Sort by most recent first (already ordered by created_at desc from query)
     setGames(parsedGames);
     setLoading(false);
   }, []);
@@ -154,10 +157,11 @@ const LiveGames = () => {
     };
   }, [fetchLiveGames]);
 
+  const filteredGames = filter === "all" ? games : games.filter((g) => g.status === filter);
   const activeCount = games.filter((g) => g.status === "live").length;
 
   return (
-    <div className="px-4 pt-6 space-y-6">
+    <div className="px-4 pt-6 space-y-4">
       <div className="flex items-center gap-2">
         <Radio className="w-5 h-5 text-accent animate-pulse" />
         <h1 className="text-2xl font-heading font-bold">Live Games</h1>
@@ -166,17 +170,51 @@ const LiveGames = () => {
         </span>
       </div>
 
+      {/* Filter tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {FILTER_OPTIONS.map((opt) => {
+          const count =
+            opt.value === "all"
+              ? games.length
+              : games.filter((g) => g.status === opt.value).length;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setFilter(opt.value)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-heading font-bold whitespace-nowrap transition-colors ${
+                filter === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+              }`}
+            >
+              {opt.label}
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                  filter === opt.value
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
         <p className="text-muted-foreground text-sm">Loading...</p>
-      ) : games.length === 0 ? (
+      ) : filteredGames.length === 0 ? (
         <div className="glass rounded-xl p-8 text-center space-y-2">
           <Radio className="w-10 h-10 text-muted-foreground mx-auto opacity-30" />
-          <p className="text-muted-foreground">No games yet</p>
+          <p className="text-muted-foreground">
+            {filter === "all" ? "No games yet" : `No ${filter} games`}
+          </p>
           <p className="text-xs text-muted-foreground">Games will appear here as they start and finish</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {games.map((game) => (
+          {filteredGames.map((game) => (
             <div
               key={game.id}
               className={`glass rounded-xl p-4 space-y-3 animate-slide-up ${game.status === "live" ? "" : "opacity-75"}`}
