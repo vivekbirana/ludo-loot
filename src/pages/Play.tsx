@@ -34,6 +34,7 @@ const Play = () => {
     toggleReady,
     leaveRoom,
     startGame,
+    fillWithBots,
   } = useGameRooms();
 
   const handleCreateRoom = async () => {
