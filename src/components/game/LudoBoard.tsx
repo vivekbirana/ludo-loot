@@ -107,7 +107,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         {MAIN_PATH.map((cell, idx) => {
           const isSafe = SAFE_POSITIONS.has(idx);
           // Color start tiles with their player's color
-          const startColorMap: Record<number, string> = { 0: PLAYER_COLORS[0], 13: PLAYER_COLORS[1], 26: PLAYER_COLORS[2], 39: PLAYER_COLORS[3] };
+          const startColorMap: Record<number, string> = { 13: PLAYER_COLORS[0], 26: PLAYER_COLORS[1], 39: PLAYER_COLORS[2], 0: PLAYER_COLORS[3] };
           const tileFill = startColorMap[idx] || "white";
           return (
             <g key={`path-${idx}`}>

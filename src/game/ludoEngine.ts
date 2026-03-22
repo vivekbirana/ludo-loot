@@ -25,7 +25,7 @@ export const HOME_BASE_ORIGINS = [
 ];
 
 // Starting cell index on the main path for each player
-export const START_POSITIONS = [0, 13, 26, 39];
+export const START_POSITIONS = [13, 26, 39, 0];
 
 // Safe zone positions on the main path (0-indexed)
 export const SAFE_POSITIONS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
@@ -33,71 +33,71 @@ export const SAFE_POSITIONS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
 // Main path coordinates (52 cells going clockwise)
 // Standard Ludo: Red(TL) starts at (6,1), Green(TR) at (1,8), Yellow(BR) at (8,13), Blue(BL) at (13,6)
 export const MAIN_PATH: { row: number; col: number }[] = [
-  // Red start — left arm, row 6, going right (cells 0-4)
-  { row: 6, col: 1 },  // 0 — Red start/safe
-  { row: 6, col: 2 },  // 1
-  { row: 6, col: 3 },  // 2
-  { row: 6, col: 4 },  // 3
-  { row: 6, col: 5 },  // 4
-  // Top arm, col 6, going up (cells 5-10)
-  { row: 5, col: 6 },  // 5
-  { row: 4, col: 6 },  // 6
-  { row: 3, col: 6 },  // 7
-  { row: 2, col: 6 },  // 8 — safe
-  { row: 1, col: 6 },  // 9
-  { row: 0, col: 6 },  // 10
-  // Top connecting cells (cells 11-12)
-  { row: 0, col: 7 },  // 11
-  { row: 0, col: 8 },  // 12
-  // Top arm, col 8, going down (cells 13-17)
-  { row: 1, col: 8 },  // 13 — Green start/safe
-  { row: 2, col: 8 },  // 14
-  { row: 3, col: 8 },  // 15
-  { row: 4, col: 8 },  // 16
-  { row: 5, col: 8 },  // 17
-  // Right arm, row 6, going right (cells 18-23)
-  { row: 6, col: 9 },  // 18
-  { row: 6, col: 10 }, // 19
-  { row: 6, col: 11 }, // 20
-  { row: 6, col: 12 }, // 21 — safe
-  { row: 6, col: 13 }, // 22
-  { row: 6, col: 14 }, // 23
-  // Right connecting cells (cells 24-25)
-  { row: 7, col: 14 }, // 24
-  { row: 8, col: 14 }, // 25
-  // Right arm, row 8, going left (cells 26-30)
-  { row: 8, col: 13 }, // 26 — Yellow start/safe
-  { row: 8, col: 12 }, // 27
-  { row: 8, col: 11 }, // 28
-  { row: 8, col: 10 }, // 29
-  { row: 8, col: 9 },  // 30
-  // Bottom arm, col 8, going down (cells 31-36)
-  { row: 9, col: 8 },  // 31
-  { row: 10, col: 8 }, // 32
-  { row: 11, col: 8 }, // 33
-  { row: 12, col: 8 }, // 34 — safe
-  { row: 13, col: 8 }, // 35
-  { row: 14, col: 8 }, // 36
-  // Bottom connecting cells (cells 37-38)
-  { row: 14, col: 7 }, // 37
-  { row: 14, col: 6 }, // 38
-  // Bottom arm, col 6, going up (cells 39-43)
-  { row: 13, col: 6 }, // 39 — Blue start/safe
-  { row: 12, col: 6 }, // 40
-  { row: 11, col: 6 }, // 41
-  { row: 10, col: 6 }, // 42
-  { row: 9, col: 6 },  // 43
-  // Left arm, row 8, going left (cells 44-49)
-  { row: 8, col: 5 },  // 44
-  { row: 8, col: 4 },  // 45
-  { row: 8, col: 3 },  // 46
-  { row: 8, col: 2 },  // 47 — safe
-  { row: 8, col: 1 },  // 48
-  { row: 8, col: 0 },  // 49
-  // Left connecting cells (cells 50-51)
-  { row: 7, col: 0 },  // 50
-  { row: 6, col: 0 },  // 51
-  // Wraps back to cell 0: (6, 1)
+  // Blue start — bottom arm, col 6, going up (cells 0-4)
+  { row: 13, col: 6 }, // 0 — Blue start/safe
+  { row: 12, col: 6 }, // 1
+  { row: 11, col: 6 }, // 2
+  { row: 10, col: 6 }, // 3
+  { row: 9, col: 6 },  // 4
+  // Left arm, row 8, going left (cells 5-10)
+  { row: 8, col: 5 },  // 5
+  { row: 8, col: 4 },  // 6
+  { row: 8, col: 3 },  // 7
+  { row: 8, col: 2 },  // 8 — safe
+  { row: 8, col: 1 },  // 9
+  { row: 8, col: 0 },  // 10
+  // Left connecting cells (cells 11-12)
+  { row: 7, col: 0 },  // 11
+  { row: 6, col: 0 },  // 12
+  // Red start — left arm, row 6, going right (cells 13-17)
+  { row: 6, col: 1 },  // 13 — Red start/safe
+  { row: 6, col: 2 },  // 14
+  { row: 6, col: 3 },  // 15
+  { row: 6, col: 4 },  // 16
+  { row: 6, col: 5 },  // 17
+  // Top arm, col 6, going up (cells 18-23)
+  { row: 5, col: 6 },  // 18
+  { row: 4, col: 6 },  // 19
+  { row: 3, col: 6 },  // 20
+  { row: 2, col: 6 },  // 21 — safe
+  { row: 1, col: 6 },  // 22
+  { row: 0, col: 6 },  // 23
+  // Top connecting cells (cells 24-25)
+  { row: 0, col: 7 },  // 24
+  { row: 0, col: 8 },  // 25
+  // Green start — top arm, col 8, going down (cells 26-30)
+  { row: 1, col: 8 },  // 26 — Green start/safe
+  { row: 2, col: 8 },  // 27
+  { row: 3, col: 8 },  // 28
+  { row: 4, col: 8 },  // 29
+  { row: 5, col: 8 },  // 30
+  // Right arm, row 6, going right (cells 31-36)
+  { row: 6, col: 9 },  // 31
+  { row: 6, col: 10 }, // 32
+  { row: 6, col: 11 }, // 33
+  { row: 6, col: 12 }, // 34 — safe
+  { row: 6, col: 13 }, // 35
+  { row: 6, col: 14 }, // 36
+  // Right connecting cells (cells 37-38)
+  { row: 7, col: 14 }, // 37
+  { row: 8, col: 14 }, // 38
+  // Yellow start — right arm, row 8, going left (cells 39-43)
+  { row: 8, col: 13 }, // 39 — Yellow start/safe
+  { row: 8, col: 12 }, // 40
+  { row: 8, col: 11 }, // 41
+  { row: 8, col: 10 }, // 42
+  { row: 8, col: 9 },  // 43
+  // Bottom arm, col 8, going down (cells 44-49)
+  { row: 9, col: 8 },  // 44
+  { row: 10, col: 8 }, // 45
+  { row: 11, col: 8 }, // 46
+  { row: 12, col: 8 }, // 47 — safe
+  { row: 13, col: 8 }, // 48
+  { row: 14, col: 8 }, // 49
+  // Bottom connecting cells (cells 50-51)
+  { row: 14, col: 7 }, // 50
+  { row: 14, col: 6 }, // 51
+  // Wraps back to cell 0: (13, 6)
 ];
 
 // Home column paths (6 cells each leading to center)
@@ -113,7 +113,7 @@ export const HOME_COLUMNS: { row: number; col: number }[][] = [
 ];
 
 // Entry to home column: the main path index just before entering home column
-export const HOME_ENTRY_POSITIONS = [51, 12, 25, 38];
+export const HOME_ENTRY_POSITIONS = [12, 25, 38, 51];
 
 export interface TokenState {
   position: "home" | "path" | "home_column" | "finished";
