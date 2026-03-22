@@ -113,8 +113,8 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 y={cell.row * cellSize + 1}
                 width={cellSize - 2}
                 height={cellSize - 2}
-                fill={isSafe ? "hsl(155, 60%, 20%)" : "hsl(220, 15%, 18%)"}
-                stroke={isSafe ? "hsl(155, 60%, 35%)" : "hsl(220, 10%, 25%)"}
+                fill={isSafe ? "hsl(155, 50%, 88%)" : "hsl(40, 20%, 88%)"}
+                stroke={isSafe ? "hsl(155, 40%, 65%)" : "hsl(40, 10%, 75%)"}
                 strokeWidth="0.5"
                 rx="2"
               />
