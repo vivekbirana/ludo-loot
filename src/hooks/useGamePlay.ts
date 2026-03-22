@@ -397,6 +397,9 @@ export function useGamePlay(roomId: string | null) {
     }
 
     const finalState = moveToken(baseState, tokenIndex);
+    // Apply final state BEFORE clearing animation lock to prevent
+    // realtime subscription from overwriting with stale pre-move data
+    setGameState(finalState);
     animatingRef.current = false;
     return finalState;
   };
