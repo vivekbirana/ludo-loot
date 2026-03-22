@@ -83,9 +83,11 @@ Deno.serve(async (req) => {
     );
     const password = btoa(String.fromCharCode(...new Uint8Array(signature)));
 
-    // Check if user exists by listing and filtering
+    // Check if user exists by email or phone
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    let user = existingUsers?.users?.find((u) => u.email === email);
+    let user = existingUsers?.users?.find(
+      (u) => u.email === email || u.phone === phone
+    );
 
     if (!user) {
       // Create new user with email (phone stored in metadata + profiles table)
@@ -93,7 +95,6 @@ Deno.serve(async (req) => {
         email,
         email_confirm: true,
         password,
-        phone,
         user_metadata: { phone },
       });
 
@@ -102,8 +103,12 @@ Deno.serve(async (req) => {
       }
       user = newUser.user;
     } else {
-      // Update password for existing user
-      await supabaseAdmin.auth.admin.updateUserById(user.id, { password });
+      // Update email and password for existing user (migrate phone-only users)
+      await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        email,
+        email_confirm: true,
+        password,
+      });
     }
 
     // Sign in to get session
