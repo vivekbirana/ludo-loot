@@ -70,7 +70,8 @@ const LiveGames = () => {
       });
     }
 
-    const liveGames: LiveGame[] = rooms.map((room) => {
+    const activeRooms = rooms.filter((r) => activeRoomIds.includes(r.id));
+    const liveGames: LiveGame[] = activeRooms.map((room) => {
       const roomPlayers = (players || []).filter((p) => p.room_id === room.id);
       return {
         id: room.id,
