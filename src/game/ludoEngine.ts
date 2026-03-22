@@ -124,8 +124,9 @@ export interface TokenState {
 }
 
 export interface GameState {
-  tokens: TokenState[][]; // [playerIndex][tokenIndex]
-  currentTurn: number; // player index
+  tokens: TokenState[][]; // [playerSeat][tokenIndex]
+  colorOrder: number[]; // [playerSeat] -> color index (0=Red,1=Green,2=Yellow,3=Blue)
+  currentTurn: number; // player seat index
   diceValue: number | null;
   turnPhase: "rolling" | "moving" | "finished";
   consecutiveSixes: number;
@@ -133,7 +134,7 @@ export interface GameState {
   playerCount: number;
 }
 
-export function createInitialGameState(playerCount: number): GameState {
+export function createInitialGameState(playerCount: number, colorOrder?: number[]): GameState {
   const tokens: TokenState[][] = [];
   for (let p = 0; p < playerCount; p++) {
     tokens.push([
@@ -143,17 +144,29 @@ export function createInitialGameState(playerCount: number): GameState {
       { position: "home", pathIndex: 0 },
     ]);
   }
-  // Blue (player 3) starts first; for 2 players use indices 0 and 2 (Red vs Yellow)
-  // Turn order: Blue(3) -> Red(0) -> Green(1) -> Yellow(2)
+
+  const resolvedColorOrder =
+    colorOrder && colorOrder.length === playerCount
+      ? colorOrder
+      : Array.from({ length: playerCount }, (_, i) => i);
+
+  // Blue starts whenever present; otherwise first seat starts.
+  const blueSeat = resolvedColorOrder.indexOf(3);
+
   return {
     tokens,
-    currentTurn: playerCount === 4 ? 3 : 0, // Blue starts in 4p, first player in 2p
+    colorOrder: resolvedColorOrder,
+    currentTurn: blueSeat >= 0 ? blueSeat : 0,
     diceValue: null,
     turnPhase: "rolling",
     consecutiveSixes: 0,
     winner: null,
     playerCount,
   };
+}
+
+function getPlayerColorIndex(state: GameState, playerSeat: number): number {
+  return state.colorOrder?.[playerSeat] ?? playerSeat;
 }
 
 export function rollDice(): number {
@@ -180,8 +193,8 @@ export function getMovableTokens(state: GameState): number[] {
 
     if (token.position === "path") {
       const newPathIndex = (token.pathIndex + diceValue) % 52;
-      const startPos = START_POSITIONS[currentTurn];
-      const homeEntry = HOME_ENTRY_POSITIONS[currentTurn];
+      const playerColorIndex = getPlayerColorIndex(state, currentTurn);
+      const homeEntry = HOME_ENTRY_POSITIONS[playerColorIndex];
 
       // Check if token should enter home column
       const distToHome = ((homeEntry - token.pathIndex + 52) % 52);
@@ -216,18 +229,19 @@ export function moveToken(state: GameState, tokenIndex: number): GameState {
   if (diceValue === null) return newState;
 
   const token = newState.tokens[currentTurn][tokenIndex];
+  const currentColorIndex = getPlayerColorIndex(newState, currentTurn);
   let gotKill = false;
   let gotHome = false;
 
   if (token.position === "home" && diceValue === 6) {
     // Move out of home to start position
     token.position = "path";
-    token.pathIndex = START_POSITIONS[currentTurn];
+    token.pathIndex = START_POSITIONS[currentColorIndex];
 
     // Check for kills at start
     gotKill = checkAndKill(newState, currentTurn, token.pathIndex);
   } else if (token.position === "path") {
-    const homeEntry = HOME_ENTRY_POSITIONS[currentTurn];
+    const homeEntry = HOME_ENTRY_POSITIONS[currentColorIndex];
     const distToHome = ((homeEntry - token.pathIndex + 52) % 52);
 
     if (distToHome > 0 && distToHome <= diceValue) {

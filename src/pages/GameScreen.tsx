@@ -43,8 +43,11 @@ const GameScreen = () => {
     );
   }
 
+  const getSeatColorIndex = (seat: number) => gameState.colorOrder?.[seat] ?? seat;
   const isMyTurn = playerIndex !== null && gameState.currentTurn === playerIndex;
-  const currentTurnColor = PLAYER_COLORS[gameState.currentTurn];
+  const currentTurnColorIndex = getSeatColorIndex(gameState.currentTurn);
+  const currentTurnColor = PLAYER_COLORS[currentTurnColorIndex];
+  const currentTurnLabel = playerNames[gameState.currentTurn] || PLAYER_NAMES[currentTurnColorIndex];
   const isFinished = gameState.turnPhase === "finished";
 
   const onQuit = async () => {
@@ -113,7 +116,7 @@ const GameScreen = () => {
             style={{ backgroundColor: currentTurnColor }}
           />
           <span className="text-sm font-heading font-bold" style={{ color: currentTurnColor }}>
-            {isMyTurn ? "Your Turn!" : `${playerNames[gameState.currentTurn] || PLAYER_NAMES[gameState.currentTurn]}'s Turn`}
+            {isMyTurn ? "Your Turn!" : `${currentTurnLabel}'s Turn`}
           </span>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Timer className="w-3 h-3" />
@@ -137,7 +140,7 @@ const GameScreen = () => {
         {isFinished ? (
           <div className="glass rounded-xl p-6 text-center space-y-3">
             <h2 className="text-2xl font-heading font-bold">
-              🏆 {playerNames[gameState.winner!] || PLAYER_NAMES[gameState.winner!]} Wins!
+              🏆 {playerNames[gameState.winner!] || PLAYER_NAMES[getSeatColorIndex(gameState.winner!)]} Wins!
             </h2>
             <p className="text-muted-foreground text-sm">
               {gameState.winner === playerIndex ? "Congratulations! You won!" : "Better luck next time!"}

@@ -9,9 +9,13 @@ interface PlayerInfoBarProps {
 }
 
 const PlayerInfoBar = ({ gameState, playerNames, currentPlayerId }: PlayerInfoBarProps) => {
+  const getSeatColorIndex = (seat: number) => gameState.colorOrder?.[seat] ?? seat;
+
   return (
     <div className="flex gap-2">
       {Array.from({ length: gameState.playerCount }).map((_, idx) => {
+        const colorIdx = getSeatColorIndex(idx);
+        const color = PLAYER_COLORS[colorIdx];
         const isActive = gameState.currentTurn === idx;
         const finishedCount = gameState.tokens[idx].filter((t) => t.position === "finished").length;
         const isWinner = gameState.winner === idx;
@@ -28,30 +32,29 @@ const PlayerInfoBar = ({ gameState, playerNames, currentPlayerId }: PlayerInfoBa
               isWinner && "ring-2 ring-accent"
             )}
             style={{
-              backgroundColor: `${PLAYER_COLORS[idx]}15`,
-              borderColor: isActive ? PLAYER_COLORS[idx] : undefined,
+              backgroundColor: `${color}15`,
+              borderColor: isActive ? color : undefined,
             }}
           >
             <div className="flex items-center justify-center gap-1">
               {isWinner && <Crown className="w-3 h-3 text-accent" />}
               <p
                 className="text-xs font-heading font-bold truncate"
-                style={{ color: PLAYER_COLORS[idx] }}
+                style={{ color }}
               >
-                {playerNames[idx] || PLAYER_NAMES[idx]}
+                {playerNames[idx] || PLAYER_NAMES[colorIdx]}
               </p>
             </div>
             <p className="text-[10px] text-muted-foreground">
               {isMe ? "You" : ""} {finishedCount}/4
             </p>
-            {/* Token indicators */}
             <div className="flex justify-center gap-0.5 mt-1">
               {gameState.tokens[idx].map((token, ti) => (
                 <div
                   key={ti}
                   className="w-2 h-2 rounded-full"
                   style={{
-                    backgroundColor: PLAYER_COLORS[idx],
+                    backgroundColor: color,
                     opacity: token.position === "finished" ? 1 : 0.3,
                   }}
                 />
