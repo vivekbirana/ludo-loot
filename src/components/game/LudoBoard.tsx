@@ -76,7 +76,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               width={cellSize * 6 - 4}
               height={cellSize * 6 - 4}
               fill={PLAYER_COLORS[idx]}
-              opacity={0.15}
+              opacity={0.2}
               rx="8"
             />
             <rect
