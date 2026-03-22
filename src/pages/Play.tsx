@@ -3,6 +3,7 @@ import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import RoomCard from "@/components/RoomCard";
+import RoomLobby from "@/components/RoomLobby";
 import {
   Dialog,
   DialogContent,
@@ -12,27 +13,60 @@ import {
 } from "@/components/ui/dialog";
 import CoinBalance from "@/components/CoinBalance";
 import { cn } from "@/lib/utils";
+import { useGameRooms } from "@/hooks/useGameRooms";
 
 const betAmounts = [50, 100, 200, 500];
 const playerModes = [2, 3, 4];
-
-const mockRooms = [
-  { code: "A1B2", betAmount: 100, playerCount: 1, maxPlayers: 2, status: "waiting" as const },
-  { code: "C3D4", betAmount: 200, playerCount: 2, maxPlayers: 4, status: "waiting" as const },
-  { code: "E5F6", betAmount: 50, playerCount: 3, maxPlayers: 4, status: "in_progress" as const },
-  { code: "G7H8", betAmount: 100, playerCount: 4, maxPlayers: 4, status: "finished" as const },
-];
 
 const Play = () => {
   const [selectedBet, setSelectedBet] = useState(100);
   const [selectedMode, setSelectedMode] = useState(2);
   const [roomCode, setRoomCode] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const {
+    rooms,
+    currentRoom,
+    loading,
+    createRoom,
+    joinRoom,
+    joinByCode,
+    toggleReady,
+    leaveRoom,
+    startGame,
+  } = useGameRooms();
+
+  const handleCreateRoom = async () => {
+    await createRoom(selectedBet, selectedMode);
+    setDialogOpen(false);
+  };
+
+  const handleJoinByCode = async () => {
+    await joinByCode(roomCode);
+    setRoomCode("");
+  };
+
+  // Show lobby if user is in a room
+  if (currentRoom) {
+    return (
+      <div className="px-4 pt-6">
+        <RoomLobby
+          room={currentRoom}
+          onReady={toggleReady}
+          onLeave={leaveRoom}
+          onStart={startGame}
+        />
+      </div>
+    );
+  }
+
+  const waitingRooms = rooms.filter((r) => r.status === "waiting");
 
   return (
     <div className="px-4 pt-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-heading font-bold">Play</h1>
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-primary font-heading font-bold text-primary-foreground shadow-glow">
               <Plus className="w-4 h-4 mr-1" />
@@ -82,7 +116,10 @@ const Play = () => {
                   ))}
                 </div>
               </div>
-              <Button className="w-full bg-gradient-primary font-heading font-bold text-primary-foreground shadow-glow">
+              <Button
+                className="w-full bg-gradient-primary font-heading font-bold text-primary-foreground shadow-glow"
+                onClick={handleCreateRoom}
+              >
                 Create & Wait
               </Button>
             </div>
@@ -102,7 +139,12 @@ const Play = () => {
             maxLength={6}
           />
         </div>
-        <Button variant="outline" className="font-heading font-bold" disabled={roomCode.length < 4}>
+        <Button
+          variant="outline"
+          className="font-heading font-bold"
+          disabled={roomCode.length < 4}
+          onClick={handleJoinByCode}
+        >
           Join
         </Button>
       </div>
@@ -110,11 +152,27 @@ const Play = () => {
       {/* Room list */}
       <div className="space-y-3">
         <h2 className="text-lg font-heading font-bold">Open Rooms</h2>
-        <div className="space-y-2">
-          {mockRooms.map((room) => (
-            <RoomCard key={room.code} {...room} />
-          ))}
-        </div>
+        {loading ? (
+          <p className="text-muted-foreground text-sm">Loading rooms...</p>
+        ) : waitingRooms.length === 0 ? (
+          <div className="glass rounded-xl p-8 text-center">
+            <p className="text-muted-foreground">No open rooms. Create one!</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {waitingRooms.map((room) => (
+              <RoomCard
+                key={room.id}
+                code={room.code}
+                betAmount={room.bet_amount}
+                playerCount={room.players.length}
+                maxPlayers={room.max_players}
+                status={room.status as "waiting" | "in_progress" | "finished"}
+                onJoin={() => joinRoom(room.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

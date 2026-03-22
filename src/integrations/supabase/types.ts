@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      game_rooms: {
+        Row: {
+          bet_amount: number
+          code: string
+          created_at: string
+          created_by: string
+          id: string
+          max_players: number
+          status: string
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          bet_amount: number
+          code: string
+          created_at?: string
+          created_by: string
+          id?: string
+          max_players?: number
+          status?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          bet_amount?: number
+          code?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          max_players?: number
+          status?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           code: string
@@ -67,6 +103,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      room_players: {
+        Row: {
+          id: string
+          is_ready: boolean
+          joined_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_ready?: boolean
+          joined_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_ready?: boolean
+          joined_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "game_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
