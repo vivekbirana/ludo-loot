@@ -223,18 +223,20 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         <text x={7.5 * cellSize} y={8.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
 
         {/* Tokens */}
-        {gameState.tokens.map((playerTokens, playerIdx) =>
+        {gameState.tokens.map((playerTokens, playerSeat) =>
           playerTokens.map((token, tokenIdx) => {
-            const coords = getTokenCoords(playerIdx, token, tokenIdx, cellSize);
+            const colorIdx = getSeatColorIndex(playerSeat);
+            const color = PLAYER_COLORS[colorIdx];
+            const coords = getTokenCoords(colorIdx, token, tokenIdx, cellSize);
             if (!coords) return null;
 
             const isMovable =
-              currentPlayerId === playerIdx && movableTokens.includes(tokenIdx);
-            const isCurrentTurn = gameState.currentTurn === playerIdx;
+              currentPlayerId === playerSeat && movableTokens.includes(tokenIdx);
+            const isCurrentTurn = gameState.currentTurn === playerSeat;
 
             return (
               <g
-                key={`token-${playerIdx}-${tokenIdx}`}
+                key={`token-${playerSeat}-${tokenIdx}`}
                 onClick={() => isMovable && onTokenClick(tokenIdx)}
                 style={{ cursor: isMovable ? "pointer" : "default" }}
               >
@@ -244,7 +246,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                     cx={coords.x}
                     cy={coords.y}
                     r={cellSize * 0.42}
-                    fill={PLAYER_COLORS[playerIdx]}
+                    fill={color}
                     opacity={0.3}
                     className="animate-pulse"
                   />
@@ -261,8 +263,8 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                   cx={coords.x}
                   cy={coords.y}
                   r={cellSize * 0.32}
-                  fill={PLAYER_COLORS[playerIdx]}
-                  stroke={isMovable ? "#fff" : PLAYER_COLORS[playerIdx]}
+                  fill={color}
+                  stroke={isMovable ? "#fff" : color}
                   strokeWidth={isMovable ? 2 : 1}
                   opacity={isCurrentTurn ? 1 : 0.7}
                 />
