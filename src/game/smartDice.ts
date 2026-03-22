@@ -117,6 +117,7 @@ function findUsefulRolls(state: GameState, seat: number): Set<number> {
 // ── Streak tracking ──────────────────────────────
 
 const nonSixStreak: Record<number, number> = {};
+const consecutiveSixes: Record<number, number> = {};
 
 function resetStreak(seat: number) {
   nonSixStreak[seat] = 0;
