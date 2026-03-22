@@ -84,8 +84,8 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots, onSelectColor 
                   className={cn(
                     "w-12 h-12 rounded-full border-3 transition-all flex items-center justify-center",
                     isSelected && "ring-2 ring-offset-2 ring-foreground scale-110",
-                    isTaken && "opacity-30 cursor-not-allowed",
-                    !isTaken && !isSelected && "hover:scale-105 cursor-pointer"
+                    isDisabled && "opacity-30 cursor-not-allowed",
+                    !isDisabled && !isSelected && "hover:scale-105 cursor-pointer"
                   )}
                   style={{
                     backgroundColor: color,
