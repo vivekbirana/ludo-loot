@@ -74,13 +74,13 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots, onSelectColor 
           </h3>
           <div className="flex justify-center gap-3">
             {PLAYER_COLORS.map((color, idx) => {
-              const isTaken = takenColors.includes(idx) && myColor !== idx;
+              const isDisabled = getDisabledColors(idx);
               const isSelected = myColor === idx;
               return (
                 <button
                   key={idx}
-                  onClick={() => !isTaken && onSelectColor?.(idx)}
-                  disabled={isTaken}
+                  onClick={() => !isDisabled && onSelectColor?.(idx)}
+                  disabled={isDisabled}
                   className={cn(
                     "w-12 h-12 rounded-full border-3 transition-all flex items-center justify-center",
                     isSelected && "ring-2 ring-offset-2 ring-foreground scale-110",
