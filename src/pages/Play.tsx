@@ -22,10 +22,12 @@ const betAmounts = [50, 100, 200, 500];
 const playerModes = [2, 3, 4];
 
 const Play = () => {
+  const { user } = useAuth();
   const [selectedBet, setSelectedBet] = useState(100);
   const [selectedMode, setSelectedMode] = useState(2);
   const [roomCode, setRoomCode] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeGameId, setActiveGameId] = useState<string | null>(null);
 
   const {
     rooms,
@@ -40,6 +42,50 @@ const Play = () => {
     startGame,
     fillWithBots,
   } = useGameRooms();
+
+  // Check for active games user can rejoin
+  useEffect(() => {
+    if (!user) return;
+    const checkActiveGames = async () => {
+      // Find rooms where user is a player and game is in_progress
+      const { data: myRoomPlayers } = await supabase
+        .from("room_players")
+        .select("room_id")
+        .eq("user_id", user.id);
+
+      if (!myRoomPlayers || myRoomPlayers.length === 0) {
+        setActiveGameId(null);
+        return;
+      }
+
+      const roomIds = myRoomPlayers.map((rp) => rp.room_id);
+      const { data: activeRooms } = await supabase
+        .from("game_rooms")
+        .select("id")
+        .in("id", roomIds)
+        .eq("status", "in_progress");
+
+      if (activeRooms && activeRooms.length > 0) {
+        // Check if the game state is not finished
+        const { data: states } = await supabase
+          .from("game_states")
+          .select("room_id, token_positions")
+          .in("room_id", activeRooms.map((r) => r.id));
+
+        const unfinished = activeRooms.find((room) => {
+          const gs = states?.find((s) => s.room_id === room.id);
+          if (!gs) return true; // no state yet, still active
+          const tp = gs.token_positions as any;
+          return tp?.turnPhase !== "finished" && tp?.winner === null;
+        });
+
+        setActiveGameId(unfinished?.id || null);
+      } else {
+        setActiveGameId(null);
+      }
+    };
+    checkActiveGames();
+  }, [user, currentRoom]);
 
   const handleCreateRoom = async () => {
     await createRoom(selectedBet, selectedMode);
