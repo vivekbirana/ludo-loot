@@ -93,7 +93,7 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots, onSelectColor 
                   }}
                 >
                   {isSelected && <Check className="w-5 h-5 text-white" />}
-                  {isTaken && <X className="w-5 h-5 text-white" />}
+                  {isDisabled && <X className="w-5 h-5 text-white" />}
                 </button>
               );
             })}
