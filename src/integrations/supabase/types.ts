@@ -50,6 +50,53 @@ export type Database = {
         }
         Relationships: []
       }
+      game_states: {
+        Row: {
+          created_at: string
+          current_turn: number
+          dice_value: number | null
+          id: string
+          room_id: string
+          token_positions: Json
+          turn_phase: string
+          turn_start_at: string | null
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_turn?: number
+          dice_value?: number | null
+          id?: string
+          room_id: string
+          token_positions?: Json
+          turn_phase?: string
+          turn_start_at?: string | null
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_turn?: number
+          dice_value?: number | null
+          id?: string
+          room_id?: string
+          token_positions?: Json
+          turn_phase?: string
+          turn_start_at?: string | null
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_states_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "game_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       otp_codes: {
         Row: {
           code: string
