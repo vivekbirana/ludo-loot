@@ -450,12 +450,32 @@ export function useGamePlay(roomId: string | null) {
   };
 
   const handleQuitGame = async () => {
-    if (!roomId || !user) return;
+    if (!roomId || !user || !gameState) return;
+
+    // Mark the game as finished with opponent as winner
+    if (playerIndex !== null) {
+      const winnerSeat = (playerIndex + 1) % gameState.playerCount;
+      const forfeitState: GameState = {
+        ...gameState,
+        turnPhase: "finished",
+        winner: winnerSeat,
+        diceValue: null,
+      };
+      await saveGameState(forfeitState);
+    }
+
+    // Update room status to finished
+    await supabase
+      .from("game_rooms")
+      .update({ status: "finished" })
+      .eq("id", roomId);
+
     await supabase
       .from("room_players")
       .delete()
       .eq("room_id", roomId)
       .eq("user_id", user.id);
+
     toast.info("You left the game and forfeited your bet.");
   };
 
