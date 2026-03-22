@@ -65,7 +65,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         className="rounded-xl"
       >
         {/* Background */}
-        <rect width={boardWidth} height={boardWidth} fill="hsl(220, 15%, 12%)" rx="12" />
+        <rect width={boardWidth} height={boardWidth} fill="hsl(40, 30%, 95%)" rx="12" />
 
         {/* Home bases */}
         {HOME_BASE_ORIGINS.map((origin, idx) => (
@@ -76,7 +76,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               width={cellSize * 6 - 4}
               height={cellSize * 6 - 4}
               fill={PLAYER_COLORS[idx]}
-              opacity={0.15}
+              opacity={0.2}
               rx="8"
             />
             <rect
@@ -87,7 +87,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               fill="none"
               stroke={PLAYER_COLORS[idx]}
               strokeWidth="1.5"
-              opacity={0.4}
+              opacity={0.5}
               rx="8"
             />
             {/* Inner home area */}
@@ -97,7 +97,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               width={cellSize * 5}
               height={cellSize * 5}
               fill={PLAYER_COLORS[idx]}
-              opacity={0.08}
+              opacity={0.12}
               rx="6"
             />
           </g>
@@ -113,8 +113,8 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 y={cell.row * cellSize + 1}
                 width={cellSize - 2}
                 height={cellSize - 2}
-                fill={isSafe ? "hsl(155, 60%, 20%)" : "hsl(220, 15%, 18%)"}
-                stroke={isSafe ? "hsl(155, 60%, 35%)" : "hsl(220, 10%, 25%)"}
+                fill={isSafe ? "hsl(155, 50%, 88%)" : "hsl(40, 20%, 88%)"}
+                stroke={isSafe ? "hsl(155, 40%, 65%)" : "hsl(40, 10%, 75%)"}
                 strokeWidth="0.5"
                 rx="2"
               />
@@ -125,7 +125,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize="8"
-                  fill="hsl(155, 60%, 50%)"
+                  fill="hsl(155, 50%, 40%)"
                 >
                   ★
                 </text>
@@ -144,7 +144,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               width={cellSize - 2}
               height={cellSize - 2}
               fill={PLAYER_COLORS[playerIdx]}
-              opacity={0.2 + cellIdx * 0.05}
+              opacity={0.25 + cellIdx * 0.08}
               stroke={PLAYER_COLORS[playerIdx]}
               strokeWidth="0.5"
               strokeOpacity={0.4}
@@ -207,7 +207,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                   cx={coords.x + 1}
                   cy={coords.y + 1}
                   r={cellSize * 0.32}
-                  fill="rgba(0,0,0,0.3)"
+                  fill="rgba(0,0,0,0.12)"
                 />
                 {/* Token body */}
                 <circle
