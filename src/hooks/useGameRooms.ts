@@ -22,6 +22,7 @@ export interface RoomPlayer {
   is_ready: boolean;
   joined_at: string;
   display_name?: string;
+  color_index?: number | null;
 }
 
 function generateRoomCode(): string {
