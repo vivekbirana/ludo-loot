@@ -172,66 +172,105 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         />
 
         {/* Tokens with CSS transitions for movement */}
-        {gameState.tokens.map((playerTokens, playerSeat) =>
-          playerTokens.map((token, tokenIdx) => {
-            const colorIdx = getSeatColorIndex(playerSeat);
-            const color = PLAYER_COLORS[colorIdx];
-            const coords = getTokenCoords(colorIdx, token, tokenIdx, cellSize);
-            if (!coords) return null;
+        {(() => {
+          // Build a map of cell keys to count tokens on same cell for stacking offsets
+          const cellOccupancy: Record<string, { playerSeat: number; tokenIdx: number; colorIdx: number }[]> = {};
+          gameState.tokens.forEach((playerTokens, playerSeat) => {
+            playerTokens.forEach((token, tokenIdx) => {
+              if (token.position === "finished" || token.position === "home") return;
+              const colorIdx = getSeatColorIndex(playerSeat);
+              const key = `${token.position}-${colorIdx}-${token.pathIndex}`;
+              // For path tokens, use a global key so different colors on same cell stack
+              const cellKey = token.position === "path" ? `path-${token.pathIndex}` : key;
+              if (!cellOccupancy[cellKey]) cellOccupancy[cellKey] = [];
+              cellOccupancy[cellKey].push({ playerSeat, tokenIdx, colorIdx });
+            });
+          });
 
-            const isMovable =
-              currentPlayerId === playerSeat && movableTokens.includes(tokenIdx);
-            const isCurrentTurn = gameState.currentTurn === playerSeat;
+          const stackOffsets = [
+            { dx: -0.25, dy: -0.25 },
+            { dx: 0.25, dy: -0.25 },
+            { dx: -0.25, dy: 0.25 },
+            { dx: 0.25, dy: 0.25 },
+          ];
 
-            return (
-              <g
-                key={`token-${playerSeat}-${tokenIdx}`}
-                onClick={() => isMovable && onTokenClick(tokenIdx)}
-                style={{
-                  cursor: isMovable ? "pointer" : "default",
-                  transform: `translate(${coords.x}px, ${coords.y}px)`,
-                  transition: "transform 0.3s ease-in-out",
-                }}
-              >
-                {/* Glow for movable tokens */}
-                {isMovable && (
+          return gameState.tokens.map((playerTokens, playerSeat) =>
+            playerTokens.map((token, tokenIdx) => {
+              const colorIdx = getSeatColorIndex(playerSeat);
+              const color = PLAYER_COLORS[colorIdx];
+              const coords = getTokenCoords(colorIdx, token, tokenIdx, cellSize);
+              if (!coords) return null;
+
+              // Apply stacking offset for non-home, non-finished tokens
+              let finalX = coords.x;
+              let finalY = coords.y;
+              if (token.position !== "home" && token.position !== "finished") {
+                const cellKey = token.position === "path" ? `path-${token.pathIndex}` : `${token.position}-${colorIdx}-${token.pathIndex}`;
+                const group = cellOccupancy[cellKey];
+                if (group && group.length > 1) {
+                  const myIdx = group.findIndex(g => g.playerSeat === playerSeat && g.tokenIdx === tokenIdx);
+                  if (myIdx >= 0 && myIdx < stackOffsets.length) {
+                    finalX += stackOffsets[myIdx].dx * cellSize;
+                    finalY += stackOffsets[myIdx].dy * cellSize;
+                  }
+                }
+              }
+
+              const isMovable =
+                currentPlayerId === playerSeat && movableTokens.includes(tokenIdx);
+              const isCurrentTurn = gameState.currentTurn === playerSeat;
+              const isFinished = token.position === "finished";
+
+              return (
+                <g
+                  key={`token-${playerSeat}-${tokenIdx}`}
+                  onClick={() => isMovable && onTokenClick(tokenIdx)}
+                  style={{
+                    cursor: isMovable ? "pointer" : "default",
+                    transform: `translate(${finalX}px, ${finalY}px)`,
+                    transition: "transform 0.3s ease-in-out",
+                  }}
+                >
+                  {/* Glow for movable tokens */}
+                  {isMovable && (
+                    <circle
+                      cx={0}
+                      cy={0}
+                      r={cellSize * 0.42}
+                      fill={color}
+                      opacity={0.3}
+                      className="animate-pulse"
+                    />
+                  )}
+                  {/* Token shadow */}
+                  <circle
+                    cx={1}
+                    cy={1}
+                    r={isFinished ? cellSize * 0.22 : cellSize * 0.32}
+                    fill="rgba(0,0,0,0.12)"
+                  />
+                  {/* Token body */}
                   <circle
                     cx={0}
                     cy={0}
-                    r={cellSize * 0.42}
+                    r={isFinished ? cellSize * 0.22 : cellSize * 0.32}
                     fill={color}
-                    opacity={0.3}
-                    className="animate-pulse"
+                    stroke="#000"
+                    strokeWidth={isMovable ? 2 : 1.2}
+                    opacity={isCurrentTurn || isFinished ? 1 : 0.7}
                   />
-                )}
-                {/* Token shadow */}
-                <circle
-                  cx={1}
-                  cy={1}
-                  r={cellSize * 0.32}
-                  fill="rgba(0,0,0,0.12)"
-                />
-                {/* Token body */}
-                <circle
-                  cx={0}
-                  cy={0}
-                  r={cellSize * 0.32}
-                  fill={color}
-                  stroke={isMovable ? "#fff" : "#000"}
-                  strokeWidth={isMovable ? 2 : 1.2}
-                  opacity={isCurrentTurn ? 1 : 0.7}
-                />
-                {/* Token inner */}
-                <circle
-                  cx={0}
-                  cy={0}
-                  r={cellSize * 0.15}
-                  fill="rgba(255,255,255,0.3)"
-                />
-              </g>
-            );
-          })
-        )}
+                  {/* Token inner */}
+                  <circle
+                    cx={0}
+                    cy={0}
+                    r={isFinished ? cellSize * 0.1 : cellSize * 0.15}
+                    fill="rgba(255,255,255,0.3)"
+                  />
+                </g>
+              );
+            })
+          );
+        })()}
       </svg>
     </div>
   );
