@@ -147,7 +147,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
 
         {/* Home columns */}
         {HOME_COLUMNS.map((column, playerIdx) =>
-          column.map((cell, cellIdx) => (
+          column.slice(0, 5).map((cell, cellIdx) => (
             <g key={`hc-${playerIdx}-${cellIdx}`}>
               <rect
                 x={cell.col * cellSize + 1}
@@ -155,20 +155,17 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 width={cellSize - 2}
                 height={cellSize - 2}
                 fill={PLAYER_COLORS[playerIdx]}
-                opacity={0.25 + cellIdx * 0.08}
                 stroke={PLAYER_COLORS[playerIdx]}
                 strokeWidth="0.5"
-                strokeOpacity={0.4}
                 rx="2"
               />
-              {/* Dev: home column index */}
               <text
                 x={cell.col * cellSize + cellSize / 2}
                 y={cell.row * cellSize + cellSize / 2 + 1}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize="6"
-                fill="rgba(0,0,0,0.35)"
+                fill="rgba(255,255,255,0.7)"
                 fontFamily="monospace"
               >
                 H{cellIdx}
