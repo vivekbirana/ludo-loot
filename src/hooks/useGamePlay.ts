@@ -24,6 +24,8 @@ export function useGamePlay(roomId: string | null) {
   const [roomCode, setRoomCode] = useState("");
   const [betAmount, setBetAmount] = useState(0);
   const animatingRef = useRef(false);
+  const botPlayingRef = useRef(false);
+  const playerNamesRef = useRef<string[]>([]);
 
   const loadGameState = useCallback(async () => {
     if (!roomId) return;
@@ -199,8 +201,40 @@ export function useGamePlay(roomId: string | null) {
     };
   }, [roomId]);
 
+  // Keep ref in sync
+  useEffect(() => {
+    playerNamesRef.current = playerNames;
+  }, [playerNames]);
+
+  // Auto-trigger bot turn whenever gameState changes and it's bot's turn
+  useEffect(() => {
+    if (!gameState || gameState.turnPhase === "finished" || gameState.winner !== null) return;
+    if (gameState.turnPhase !== "rolling") return;
+    if (botPlayingRef.current) return;
+
+    const names = playerNamesRef.current;
+    const currentName = names[gameState.currentTurn];
+    if (currentName === "Bot") {
+      botPlayingRef.current = true;
+      const timer = setTimeout(() => {
+        playBotTurn(gameState).finally(() => {
+          botPlayingRef.current = false;
+        });
+      }, 1000);
+      return () => {
+        clearTimeout(timer);
+        botPlayingRef.current = false;
+      };
+    }
+  }, [gameState?.currentTurn, gameState?.turnPhase, gameState?.diceValue]);
+
+  // Turn timer - only for human players
   useEffect(() => {
     if (!gameState || gameState.turnPhase === "finished") return;
+
+    // Don't run timer for bot turns
+    const currentName = playerNamesRef.current[gameState.currentTurn];
+    if (currentName === "Bot") return;
 
     setTurnTimer(30);
     const interval = setInterval(() => {
@@ -294,13 +328,9 @@ export function useGamePlay(roomId: string | null) {
         consecutiveSixes: 0,
       };
       await saveGameState(newState);
-      if (newState.winner === null) scheduleBotTurn(newState);
     } else if (movable.length === 1) {
       const finalState = await animateTokenMove(diceState, movable[0]);
       await saveGameState(finalState);
-      if (finalState.turnPhase === "rolling" && finalState.winner === null) {
-        scheduleBotTurn(finalState);
-      }
     }
     // If movable.length > 1, wait for user to pick a token
   };
@@ -315,17 +345,6 @@ export function useGamePlay(roomId: string | null) {
 
     const finalState = await animateTokenMove(gameState, tokenIndex);
     await saveGameState(finalState);
-
-    if (finalState.turnPhase === "rolling" && finalState.winner === null) {
-      scheduleBotTurn(finalState);
-    }
-  };
-
-  const scheduleBotTurn = (state: GameState) => {
-    const currentName = playerNames[state.currentTurn];
-    if (currentName === "Bot") {
-      setTimeout(() => playBotTurn(state), 1000);
-    }
   };
 
   const playBotTurn = async (state: GameState) => {
@@ -348,23 +367,10 @@ export function useGamePlay(roomId: string | null) {
         consecutiveSixes: 0,
       };
       await saveGameState(newState);
-      if (newState.winner === null) {
-        const nextName = playerNames[newState.currentTurn];
-        if (nextName === "Bot") {
-          setTimeout(() => playBotTurn(newState), 1000);
-        }
-      }
     } else {
       const chosen = movable[Math.floor(Math.random() * movable.length)];
       const finalState = await animateTokenMove(diceState, chosen);
       await saveGameState(finalState);
-
-      if (finalState.turnPhase === "rolling" && finalState.winner === null) {
-        const nextName = playerNames[finalState.currentTurn];
-        if (nextName === "Bot") {
-          setTimeout(() => playBotTurn(finalState), 1000);
-        }
-      }
     }
   };
 
