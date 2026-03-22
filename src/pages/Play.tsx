@@ -56,6 +56,7 @@ const Play = () => {
           onReady={toggleReady}
           onLeave={leaveRoom}
           onStart={startGame}
+          onFillBots={fillWithBots}
         />
       </div>
     );
