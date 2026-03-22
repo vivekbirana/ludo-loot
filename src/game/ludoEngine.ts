@@ -124,8 +124,9 @@ export interface TokenState {
 }
 
 export interface GameState {
-  tokens: TokenState[][]; // [playerIndex][tokenIndex]
-  currentTurn: number; // player index
+  tokens: TokenState[][]; // [playerSeat][tokenIndex]
+  colorOrder: number[]; // [playerSeat] -> color index (0=Red,1=Green,2=Yellow,3=Blue)
+  currentTurn: number; // player seat index
   diceValue: number | null;
   turnPhase: "rolling" | "moving" | "finished";
   consecutiveSixes: number;
@@ -133,7 +134,7 @@ export interface GameState {
   playerCount: number;
 }
 
-export function createInitialGameState(playerCount: number): GameState {
+export function createInitialGameState(playerCount: number, colorOrder?: number[]): GameState {
   const tokens: TokenState[][] = [];
   for (let p = 0; p < playerCount; p++) {
     tokens.push([
@@ -143,17 +144,29 @@ export function createInitialGameState(playerCount: number): GameState {
       { position: "home", pathIndex: 0 },
     ]);
   }
-  // Blue (player 3) starts first; for 2 players use indices 0 and 2 (Red vs Yellow)
-  // Turn order: Blue(3) -> Red(0) -> Green(1) -> Yellow(2)
+
+  const resolvedColorOrder =
+    colorOrder && colorOrder.length === playerCount
+      ? colorOrder
+      : Array.from({ length: playerCount }, (_, i) => i);
+
+  // Blue starts whenever present; otherwise first seat starts.
+  const blueSeat = resolvedColorOrder.indexOf(3);
+
   return {
     tokens,
-    currentTurn: playerCount === 4 ? 3 : 0, // Blue starts in 4p, first player in 2p
+    colorOrder: resolvedColorOrder,
+    currentTurn: blueSeat >= 0 ? blueSeat : 0,
     diceValue: null,
     turnPhase: "rolling",
     consecutiveSixes: 0,
     winner: null,
     playerCount,
   };
+}
+
+function getPlayerColorIndex(state: GameState, playerSeat: number): number {
+  return state.colorOrder?.[playerSeat] ?? playerSeat;
 }
 
 export function rollDice(): number {
