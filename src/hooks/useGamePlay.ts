@@ -42,33 +42,39 @@ export function useGamePlay(roomId: string | null) {
       .eq("room_id", roomId)
       .order("joined_at", { ascending: true });
 
-    if (players) {
-      const userIds = players.map((p) => p.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, phone")
-        .in("user_id", userIds);
+    const userIds = (players || []).map((p) => p.user_id);
+    const { data: profiles } = userIds.length
+      ? await supabase
+          .from("profiles")
+          .select("user_id, display_name, phone")
+          .in("user_id", userIds)
+      : { data: [] as Array<{ user_id: string; display_name: string | null; phone: string }> };
 
-      // Build names array indexed by color_index (player game position)
-      const names: string[] = ["", "", "", ""];
-      players.forEach((p) => {
+    const getPlayerColor = (player: any, fallbackIndex: number) =>
+      player.color_index ?? fallbackIndex;
+
+    const applyPlayerSeatMeta = (colorOrder: number[]) => {
+      const names = Array.from({ length: colorOrder.length }, () => "");
+      let mySeat: number | null = null;
+
+      (players || []).forEach((p, idx) => {
         const profile = profiles?.find((pr) => pr.user_id === p.user_id);
-        const name = profile ? (profile.display_name || profile.phone.slice(-4)) : "Bot";
-        const colorIdx = (p as any).color_index ?? players.indexOf(p);
-        names[colorIdx] = name;
-      });
-      setPlayerNames(names);
+        const name = profile
+          ? profile.display_name || profile.phone.slice(-4)
+          : "Bot";
+        const colorIdx = getPlayerColor(p, idx);
+        const seatIdx = colorOrder.indexOf(colorIdx);
 
-      const myPlayer = players.find((p) => p.user_id === user?.id);
-      if (myPlayer) {
-        const myColorIdx = (myPlayer as any).color_index ?? players.indexOf(myPlayer);
-        setPlayerIndex(myColorIdx);
-        setIsSpectator(false);
-      } else {
-        setIsSpectator(true);
-        setPlayerIndex(null);
-      }
-    }
+        if (seatIdx >= 0) {
+          names[seatIdx] = name;
+          if (p.user_id === user?.id) mySeat = seatIdx;
+        }
+      });
+
+      setPlayerNames(names);
+      setPlayerIndex(mySeat);
+      setIsSpectator(mySeat === null);
+    };
 
     const { data: existingState } = await supabase
       .from("game_states")
@@ -77,24 +83,80 @@ export function useGamePlay(roomId: string | null) {
       .single();
 
     if (existingState) {
-      const parsed = existingState.token_positions as unknown as GameState;
+      const parsedRaw = existingState.token_positions as unknown as Partial<GameState>;
+      const resolvedPlayerCount =
+        typeof parsedRaw.playerCount === "number"
+          ? parsedRaw.playerCount
+          : players?.length || 2;
+
+      const colorOrderFromPlayers = (players || [])
+        .slice(0, resolvedPlayerCount)
+        .map((p, idx) => getPlayerColor(p, idx));
+
+      const resolvedColorOrder =
+        Array.isArray(parsedRaw.colorOrder) &&
+        parsedRaw.colorOrder.length === resolvedPlayerCount
+          ? parsedRaw.colorOrder
+          : colorOrderFromPlayers.length === resolvedPlayerCount
+            ? colorOrderFromPlayers
+            : Array.from({ length: resolvedPlayerCount }, (_, i) => i);
+
+      const fallbackInitial = createInitialGameState(
+        resolvedPlayerCount,
+        resolvedColorOrder
+      );
+
+      const resolvedCurrentTurn =
+        typeof parsedRaw.currentTurn === "number" &&
+        parsedRaw.currentTurn >= 0 &&
+        parsedRaw.currentTurn < resolvedPlayerCount
+          ? parsedRaw.currentTurn
+          : fallbackInitial.currentTurn;
+
+      const parsed: GameState = {
+        tokens: parsedRaw.tokens || fallbackInitial.tokens,
+        colorOrder: resolvedColorOrder,
+        currentTurn: resolvedCurrentTurn,
+        diceValue:
+          typeof parsedRaw.diceValue === "number" ? parsedRaw.diceValue : null,
+        turnPhase:
+          parsedRaw.turnPhase === "moving" || parsedRaw.turnPhase === "finished"
+            ? parsedRaw.turnPhase
+            : "rolling",
+        consecutiveSixes:
+          typeof parsedRaw.consecutiveSixes === "number"
+            ? parsedRaw.consecutiveSixes
+            : 0,
+        winner:
+          typeof parsedRaw.winner === "number" ? parsedRaw.winner : null,
+        playerCount: resolvedPlayerCount,
+      };
+
       setGameState(parsed);
+      applyPlayerSeatMeta(parsed.colorOrder);
     } else if (room && user && room.created_by === user.id) {
       const playerCount = players?.length || 2;
-      const initial = createInitialGameState(playerCount);
+      const colorOrder = (players || [])
+        .slice(0, playerCount)
+        .map((p, idx) => getPlayerColor(p, idx));
 
-      const { error } = await supabase.from("game_states").insert([{
-        room_id: roomId,
-        current_turn: 0,
-        turn_phase: "rolling",
-        token_positions: initial as unknown as Json,
-        turn_start_at: new Date().toISOString(),
-      }]);
+      const initial = createInitialGameState(playerCount, colorOrder);
+
+      const { error } = await supabase.from("game_states").insert([
+        {
+          room_id: roomId,
+          current_turn: initial.currentTurn,
+          turn_phase: initial.turnPhase,
+          token_positions: initial as unknown as Json,
+          turn_start_at: new Date().toISOString(),
+        },
+      ]);
 
       if (error) {
         console.error("Failed to create game state:", error);
       } else {
         setGameState(initial);
+        applyPlayerSeatMeta(initial.colorOrder);
       }
     }
   }, [roomId, user]);
@@ -265,7 +327,6 @@ export function useGamePlay(roomId: string | null) {
 
   const handleQuitGame = async () => {
     if (!roomId || !user) return;
-    // Remove player from room
     await supabase
       .from("room_players")
       .delete()
