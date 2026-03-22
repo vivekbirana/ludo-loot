@@ -175,6 +175,9 @@ export function useGamePlay(roomId: string | null) {
         winner:
           typeof parsedRaw.winner === "number" ? parsedRaw.winner : null,
         playerCount: resolvedPlayerCount,
+        skipCounts: Array.isArray(parsedRaw.skipCounts)
+          ? parsedRaw.skipCounts
+          : Array(resolvedPlayerCount).fill(0),
       };
 
       setGameState(parsed);
