@@ -380,7 +380,10 @@ export function useGamePlay(roomId: string | null) {
     await new Promise((r) => setTimeout(r, 600));
 
     const dice = smartRollDice(gameState, playerIndex);
-    const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving" };
+    // Reset skip count for this player since they actively played
+    const skipCounts = [...(gameState.skipCounts || Array(gameState.playerCount).fill(0))];
+    skipCounts[playerIndex] = 0;
+    const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving", skipCounts };
     await saveGameState(diceState);
     setRolling(false);
 
