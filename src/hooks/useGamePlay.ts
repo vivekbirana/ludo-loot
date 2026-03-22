@@ -20,6 +20,7 @@ export function useGamePlay(roomId: string | null) {
   const [turnTimer, setTurnTimer] = useState(30);
   const [isSpectator, setIsSpectator] = useState(false);
   const [roomCode, setRoomCode] = useState("");
+  const [betAmount, setBetAmount] = useState(0);
 
   const loadGameState = useCallback(async () => {
     if (!roomId) return;
