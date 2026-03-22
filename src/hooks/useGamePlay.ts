@@ -230,7 +230,8 @@ export function useGamePlay(roomId: string | null) {
           const newState = payload.new;
           if (newState.token_positions) {
             const incoming = newState.token_positions as unknown as GameState;
-            if (!animatingRef.current) {
+            // Don't overwrite local state during animation or bot turns
+            if (!animatingRef.current && !botPlayingRef.current) {
               setGameState(incoming);
             }
           }
