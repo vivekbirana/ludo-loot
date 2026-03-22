@@ -28,6 +28,26 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots, onSelectColor 
 
   const myColor = currentPlayer?.color_index;
 
+  // Opposite color pairs: Red(0) <-> Yellow(2), Green(1) <-> Blue(3)
+  const OPPOSITE_MAP: Record<number, number> = { 0: 2, 2: 0, 1: 3, 3: 1 };
+
+  // For 2P mode, determine which colors are available
+  const getDisabledColors = (idx: number): boolean => {
+    const isTaken = takenColors.includes(idx) && myColor !== idx;
+    if (isTaken) return true;
+
+    // In 2P mode, if opponent picked a color, only allow the opposite
+    if (room.max_players === 2) {
+      const otherPlayer = room.players.find((p) => p.user_id !== user?.id && p.color_index != null);
+      if (otherPlayer?.color_index != null) {
+        return idx !== OPPOSITE_MAP[otherPlayer.color_index];
+      }
+      // If I already picked, the other player's options are restricted (handled on their side)
+      // But I can still switch freely
+    }
+    return false;
+  };
+
   return (
     <div className="space-y-6 animate-slide-up">
       {/* Room Header */}
@@ -54,18 +74,18 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots, onSelectColor 
           </h3>
           <div className="flex justify-center gap-3">
             {PLAYER_COLORS.map((color, idx) => {
-              const isTaken = takenColors.includes(idx) && myColor !== idx;
+              const isDisabled = getDisabledColors(idx);
               const isSelected = myColor === idx;
               return (
                 <button
                   key={idx}
-                  onClick={() => !isTaken && onSelectColor?.(idx)}
-                  disabled={isTaken}
+                  onClick={() => !isDisabled && onSelectColor?.(idx)}
+                  disabled={isDisabled}
                   className={cn(
                     "w-12 h-12 rounded-full border-3 transition-all flex items-center justify-center",
                     isSelected && "ring-2 ring-offset-2 ring-foreground scale-110",
-                    isTaken && "opacity-30 cursor-not-allowed",
-                    !isTaken && !isSelected && "hover:scale-105 cursor-pointer"
+                    isDisabled && "opacity-30 cursor-not-allowed",
+                    !isDisabled && !isSelected && "hover:scale-105 cursor-pointer"
                   )}
                   style={{
                     backgroundColor: color,
@@ -73,7 +93,7 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots, onSelectColor 
                   }}
                 >
                   {isSelected && <Check className="w-5 h-5 text-white" />}
-                  {isTaken && <X className="w-5 h-5 text-white" />}
+                  {isDisabled && <X className="w-5 h-5 text-white" />}
                 </button>
               );
             })}
