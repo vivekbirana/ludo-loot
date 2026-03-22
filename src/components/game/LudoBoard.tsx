@@ -23,7 +23,7 @@ interface LudoBoardProps {
 }
 
 const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: LudoBoardProps) => {
-  const boardWidth = 330;
+  const boardWidth = 363;
   const cellSize = boardWidth / BOARD_SIZE;
   const prevTokensRef = useRef<string>("");
 
