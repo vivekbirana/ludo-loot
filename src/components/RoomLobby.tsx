@@ -10,9 +10,10 @@ interface RoomLobbyProps {
   onReady: () => void;
   onLeave: () => void;
   onStart: () => void;
+  onFillBots?: () => void;
 }
 
-const RoomLobby = ({ room, onReady, onLeave, onStart }: RoomLobbyProps) => {
+const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyProps) => {
   const { user } = useAuth();
   const isCreator = user?.id === room.created_by;
   const currentPlayer = room.players.find((p) => p.user_id === user?.id);
