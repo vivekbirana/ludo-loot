@@ -129,18 +129,25 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               >
                 {idx}
               </text>
-              {isSafe && (
-                <text
-                  x={cell.col * cellSize + cellSize / 2}
-                  y={cell.row * cellSize + cellSize / 2 + 5}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize="6"
-                  fill="hsl(155, 50%, 40%)"
-                >
-                  ★
-                </text>
-              )}
+              {isSafe && (() => {
+                const cx = cell.col * cellSize + cellSize / 2;
+                const cy = cell.row * cellSize + cellSize / 2;
+                const r = cellSize * 0.4;
+                const ri = r * 0.38;
+                const points = Array.from({ length: 10 }, (_, i) => {
+                  const angle = (Math.PI / 2) * -1 + (Math.PI / 5) * i;
+                  const rad = i % 2 === 0 ? r : ri;
+                  return `${cx + rad * Math.cos(angle)},${cy + rad * Math.sin(angle)}`;
+                }).join(" ");
+                return (
+                  <polygon
+                    points={points}
+                    fill="none"
+                    stroke="rgba(0,0,0,0.25)"
+                    strokeWidth="1.2"
+                  />
+                );
+              })()}
             </g>
           );
         })}
