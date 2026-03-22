@@ -149,42 +149,59 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         {/* Home columns */}
         {HOME_COLUMNS.map((column, playerIdx) =>
           column.map((cell, cellIdx) => (
-            <rect
-              key={`hc-${playerIdx}-${cellIdx}`}
-              x={cell.col * cellSize + 1}
-              y={cell.row * cellSize + 1}
-              width={cellSize - 2}
-              height={cellSize - 2}
-              fill={PLAYER_COLORS[playerIdx]}
-              opacity={0.25 + cellIdx * 0.08}
-              stroke={PLAYER_COLORS[playerIdx]}
-              strokeWidth="0.5"
-              strokeOpacity={0.4}
-              rx="2"
-            />
+            <g key={`hc-${playerIdx}-${cellIdx}`}>
+              <rect
+                x={cell.col * cellSize + 1}
+                y={cell.row * cellSize + 1}
+                width={cellSize - 2}
+                height={cellSize - 2}
+                fill={PLAYER_COLORS[playerIdx]}
+                opacity={0.25 + cellIdx * 0.08}
+                stroke={PLAYER_COLORS[playerIdx]}
+                strokeWidth="0.5"
+                strokeOpacity={0.4}
+                rx="2"
+              />
+              {/* Dev: home column index */}
+              <text
+                x={cell.col * cellSize + cellSize / 2}
+                y={cell.row * cellSize + cellSize / 2 + 1}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="6"
+                fill="rgba(0,0,0,0.35)"
+                fontFamily="monospace"
+              >
+                H{cellIdx}
+              </text>
+            </g>
           ))
         )}
 
         {/* Center triangle / finish area */}
+        {/* Red: enters from left, triangle points right */}
         <polygon
-          points={`${7 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${6 * cellSize},${7 * cellSize}`}
+          points={`${6 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${6 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[0]}
-          opacity={0.3}
+          opacity={0.4}
         />
+        {/* Green: enters from top, triangle points down */}
         <polygon
-          points={`${6 * cellSize},${7 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${7 * cellSize},${8 * cellSize}`}
+          points={`${6 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${6 * cellSize}`}
           fill={PLAYER_COLORS[1]}
-          opacity={0.3}
+          opacity={0.4}
         />
+        {/* Yellow: enters from right, triangle points left */}
         <polygon
-          points={`${7 * cellSize},${8 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${7 * cellSize}`}
+          points={`${9 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[2]}
-          opacity={0.3}
+          opacity={0.4}
         />
+        {/* Blue: enters from bottom, triangle points up */}
         <polygon
-          points={`${9 * cellSize},${7 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${8 * cellSize},${6 * cellSize}`}
+          points={`${6 * cellSize},${9 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[3]}
-          opacity={0.3}
+          opacity={0.4}
         />
 
         {/* Tokens */}
