@@ -213,6 +213,26 @@ export function useGamePlay(roomId: string | null) {
     loadGameState();
   }, [loadGameState]);
 
+  // Poll for game state if not loaded yet (handles case where player 2 loads before creator inserts state)
+  useEffect(() => {
+    if (!roomId || gameState) return;
+
+    const pollInterval = setInterval(async () => {
+      const { data } = await supabase
+        .from("game_states")
+        .select("*")
+        .eq("room_id", roomId)
+        .single();
+
+      if (data) {
+        clearInterval(pollInterval);
+        loadGameState();
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [roomId, gameState, loadGameState]);
+
   useEffect(() => {
     if (!roomId) return;
 
@@ -221,14 +241,14 @@ export function useGamePlay(roomId: string | null) {
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "*",
           schema: "public",
           table: "game_states",
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          const newState = payload.new;
-          if (newState.token_positions) {
+          const newState = payload.new as Record<string, unknown>;
+          if (newState?.token_positions) {
             const incoming = newState.token_positions as unknown as GameState;
             // Don't overwrite local state during animation or bot turns
             if (!animatingRef.current && !botPlayingRef.current) {
