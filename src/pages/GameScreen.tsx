@@ -1,12 +1,22 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, Timer } from "lucide-react";
+import { ArrowLeft, Eye, Timer, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import LudoBoard from "@/components/game/LudoBoard";
 import DiceRoller from "@/components/game/DiceRoller";
 import PlayerInfoBar from "@/components/game/PlayerInfoBar";
 import { useGamePlay } from "@/hooks/useGamePlay";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/game/ludoEngine";
-import CoinBalance from "@/components/CoinBalance";
 
 const GameScreen = () => {
   const { roomId } = useParams<{ roomId: string }>();
@@ -19,8 +29,10 @@ const GameScreen = () => {
     turnTimer,
     isSpectator,
     roomCode,
+    betAmount,
     handleRollDice,
     handleTokenClick,
+    handleQuitGame,
   } = useGamePlay(roomId || null);
 
   if (!gameState) {
@@ -35,14 +47,44 @@ const GameScreen = () => {
   const currentTurnColor = PLAYER_COLORS[gameState.currentTurn];
   const isFinished = gameState.turnPhase === "finished";
 
+  const onQuit = async () => {
+    await handleQuitGame();
+    navigate("/play");
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/play")}>
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back
-        </Button>
+        {isSpectator ? (
+          <Button variant="ghost" size="sm" onClick={() => navigate("/play")}>
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back
+          </Button>
+        ) : (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-destructive">
+                <LogOut className="w-4 h-4 mr-1" />
+                Quit
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Quit Game?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  If you quit, you will lose your bet of <strong>{betAmount} coins</strong>. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Stay</AlertDialogCancel>
+                <AlertDialogAction onClick={onQuit} className="bg-destructive text-destructive-foreground">
+                  Quit & Forfeit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground font-heading">#{roomCode}</span>
           {isSpectator && (
