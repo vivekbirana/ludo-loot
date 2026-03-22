@@ -156,8 +156,12 @@ const LiveGames = () => {
     };
   }, [fetchLiveGames]);
 
-  const filteredGames = filter === "all" ? games : games.filter((g) => g.status === filter);
-  const activeCount = games.filter((g) => g.status === "live").length;
+  const filteredGames =
+    filter === "all"
+      ? games
+      : filter === "live"
+        ? games.filter((g) => g.status === "live")
+        : games.filter((g) => g.status !== "live"); // completed includes forfeit + inactive
 
   return (
     <div className="px-4 pt-6 space-y-4">
