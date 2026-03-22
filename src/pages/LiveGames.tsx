@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Users, Radio, Trophy, XCircle } from "lucide-react";
+import { Eye, Users, Radio, Trophy, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import CoinBalance from "@/components/CoinBalance";
+import { PLAYER_NAMES } from "@/game/ludoEngine";
 
 interface LiveGame {
   id: string;
@@ -13,13 +14,26 @@ interface LiveGame {
   playerCount: number;
   playerNames: string[];
   winnerName?: string;
+  resultText: string;
   status: "live" | "forfeit" | "inactive";
+  createdAt: string;
 }
 
 const statusOrder: Record<LiveGame["status"], number> = {
   live: 0,
   forfeit: 1,
   inactive: 2,
+};
+
+const formatTimeAgo = (iso: string) => {
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
 };
 
 const LiveGames = () => {
@@ -71,9 +85,11 @@ const LiveGames = () => {
       const hasWinner = typeof tokenData?.winner === "number";
       const stateFinished = tokenData?.turnPhase === "finished" || hasWinner;
       const isInactive = room.status !== "in_progress" || stateFinished;
-      const isForfeit = isInactive && roomPlayers.length < room.max_players;
+      const isForfeit = isInactive && (roomPlayers.length < room.max_players || room.status === "cancelled");
 
       let winnerName: string | undefined;
+      let resultText = "In progress";
+
       if (hasWinner) {
         const winnerSeat = tokenData.winner as number;
         const colorOrder = tokenData.colorOrder as number[] | undefined;
@@ -83,12 +99,25 @@ const LiveGames = () => {
           const winnerPlayer = roomPlayers.find((p) => p.color_index === winnerColor);
           if (winnerPlayer) {
             winnerName = profilesMap[winnerPlayer.user_id] || "Bot";
+          } else {
+            // Player left (forfeit) — use color name
+            winnerName = PLAYER_NAMES[winnerColor] || "Player";
           }
         }
 
         if (!winnerName && roomPlayers[winnerSeat]) {
           winnerName = profilesMap[roomPlayers[winnerSeat].user_id] || "Bot";
         }
+
+        if (!winnerName) {
+          winnerName = "Unknown";
+        }
+
+        resultText = `${winnerName} won!`;
+      } else if (isForfeit) {
+        resultText = "Game forfeited";
+      } else if (isInactive) {
+        resultText = "Game ended — no winner";
       }
 
       return {
@@ -99,7 +128,9 @@ const LiveGames = () => {
         playerCount: roomPlayers.length,
         playerNames: roomPlayers.map((p) => profilesMap[p.user_id] || "Bot"),
         winnerName,
+        resultText,
         status: !isInactive ? "live" : isForfeit ? "forfeit" : "inactive",
+        createdAt: room.created_at,
       };
     });
 
@@ -151,8 +182,8 @@ const LiveGames = () => {
               className={`glass rounded-xl p-4 space-y-3 animate-slide-up ${game.status === "live" ? "" : "opacity-75"}`}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-heading font-bold text-lg">#{game.code}</span>
 
                     {game.status === "live" && (
@@ -172,7 +203,7 @@ const LiveGames = () => {
                     {game.status === "inactive" && (
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <XCircle className="w-3 h-3" />
-                        INACTIVE
+                        FINISHED
                       </span>
                     )}
                   </div>
@@ -180,18 +211,29 @@ const LiveGames = () => {
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                     <div className="flex items-center gap-1">
                       <Users className="w-3.5 h-3.5" />
-                      <span>{game.playerCount}P</span>
+                      <span>{game.maxPlayers}P</span>
                     </div>
                     <CoinBalance amount={game.betAmount} size="sm" />
-                    <span className="text-xs">
-                      Pot: <CoinBalance amount={game.betAmount * game.maxPlayers} size="sm" className="inline-flex" />
-                    </span>
+                    <div className="flex items-center gap-1 text-xs">
+                      <Clock className="w-3 h-3" />
+                      <span>{formatTimeAgo(game.createdAt)}</span>
+                    </div>
                   </div>
 
-                  {game.winnerName && (
-                    <div className="flex items-center gap-1 mt-1 text-xs text-accent">
-                      <Trophy className="w-3 h-3" />
-                      <span className="font-heading font-bold">{game.winnerName} won</span>
+                  {/* Result row */}
+                  {game.status !== "live" && (
+                    <div className="flex items-center gap-1 mt-1.5">
+                      {game.winnerName ? (
+                        <div className="flex items-center gap-1 text-xs text-accent">
+                          <Trophy className="w-3 h-3" />
+                          <span className="font-heading font-bold">{game.resultText}</span>
+                          <span className="text-muted-foreground ml-1">
+                            (Pot: {game.betAmount * game.maxPlayers})
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">{game.resultText}</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -199,7 +241,7 @@ const LiveGames = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="font-heading font-bold border-accent text-accent hover:bg-accent/10"
+                  className="font-heading font-bold border-accent text-accent hover:bg-accent/10 ml-2 shrink-0"
                   onClick={() => navigate(`/game/${game.id}`)}
                 >
                   <Eye className="w-3.5 h-3.5 mr-1" />
@@ -209,7 +251,7 @@ const LiveGames = () => {
 
               <div className="flex flex-wrap gap-1">
                 {game.playerNames.length === 0 ? (
-                  <span className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground">No players</span>
+                  <span className="text-xs bg-secondary px-2 py-0.5 rounded-full text-muted-foreground">Players left</span>
                 ) : (
                   game.playerNames.map((name, i) => (
                     <span
