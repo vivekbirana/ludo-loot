@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import RoomCard from "@/components/RoomCard";
@@ -15,6 +15,8 @@ import {
 import CoinBalance from "@/components/CoinBalance";
 import { cn } from "@/lib/utils";
 import { useGameRooms } from "@/hooks/useGameRooms";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const betAmounts = [50, 100, 200, 500];
 const playerModes = [2, 3, 4];
