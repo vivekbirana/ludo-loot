@@ -68,6 +68,7 @@ const Play = () => {
           onLeave={leaveRoom}
           onStart={startGame}
           onFillBots={fillWithBots}
+          onSelectColor={selectColor}
         />
       </div>
     );
