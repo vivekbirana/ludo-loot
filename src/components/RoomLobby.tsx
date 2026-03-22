@@ -32,7 +32,8 @@ const RoomLobby = ({ room, onReady, onLeave, onStart }: RoomLobbyProps) => {
           <span>•</span>
           <CoinBalance amount={room.bet_amount} size="sm" />
           <span>•</span>
-          <CoinBalance amount={room.bet_amount * room.max_players} size="sm" label="Pot:" />
+          <span className="text-xs text-muted-foreground">Pot:</span>
+          <CoinBalance amount={room.bet_amount * room.max_players} size="sm" />
         </div>
       </div>
 
