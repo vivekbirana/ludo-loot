@@ -201,8 +201,40 @@ export function useGamePlay(roomId: string | null) {
     };
   }, [roomId]);
 
+  // Keep ref in sync
+  useEffect(() => {
+    playerNamesRef.current = playerNames;
+  }, [playerNames]);
+
+  // Auto-trigger bot turn whenever gameState changes and it's bot's turn
+  useEffect(() => {
+    if (!gameState || gameState.turnPhase === "finished" || gameState.winner !== null) return;
+    if (gameState.turnPhase !== "rolling") return;
+    if (botPlayingRef.current) return;
+
+    const names = playerNamesRef.current;
+    const currentName = names[gameState.currentTurn];
+    if (currentName === "Bot") {
+      botPlayingRef.current = true;
+      const timer = setTimeout(() => {
+        playBotTurn(gameState).finally(() => {
+          botPlayingRef.current = false;
+        });
+      }, 1000);
+      return () => {
+        clearTimeout(timer);
+        botPlayingRef.current = false;
+      };
+    }
+  }, [gameState?.currentTurn, gameState?.turnPhase, gameState?.diceValue]);
+
+  // Turn timer - only for human players
   useEffect(() => {
     if (!gameState || gameState.turnPhase === "finished") return;
+
+    // Don't run timer for bot turns
+    const currentName = playerNamesRef.current[gameState.currentTurn];
+    if (currentName === "Bot") return;
 
     setTurnTimer(30);
     const interval = setInterval(() => {
