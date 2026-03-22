@@ -328,13 +328,9 @@ export function useGamePlay(roomId: string | null) {
         consecutiveSixes: 0,
       };
       await saveGameState(newState);
-      if (newState.winner === null) scheduleBotTurn(newState);
     } else if (movable.length === 1) {
       const finalState = await animateTokenMove(diceState, movable[0]);
       await saveGameState(finalState);
-      if (finalState.turnPhase === "rolling" && finalState.winner === null) {
-        scheduleBotTurn(finalState);
-      }
     }
     // If movable.length > 1, wait for user to pick a token
   };
@@ -349,17 +345,6 @@ export function useGamePlay(roomId: string | null) {
 
     const finalState = await animateTokenMove(gameState, tokenIndex);
     await saveGameState(finalState);
-
-    if (finalState.turnPhase === "rolling" && finalState.winner === null) {
-      scheduleBotTurn(finalState);
-    }
-  };
-
-  const scheduleBotTurn = (state: GameState) => {
-    const currentName = playerNames[state.currentTurn];
-    if (currentName === "Bot") {
-      setTimeout(() => playBotTurn(state), 1000);
-    }
   };
 
   const playBotTurn = async (state: GameState) => {
@@ -382,23 +367,10 @@ export function useGamePlay(roomId: string | null) {
         consecutiveSixes: 0,
       };
       await saveGameState(newState);
-      if (newState.winner === null) {
-        const nextName = playerNames[newState.currentTurn];
-        if (nextName === "Bot") {
-          setTimeout(() => playBotTurn(newState), 1000);
-        }
-      }
     } else {
       const chosen = movable[Math.floor(Math.random() * movable.length)];
       const finalState = await animateTokenMove(diceState, chosen);
       await saveGameState(finalState);
-
-      if (finalState.turnPhase === "rolling" && finalState.winner === null) {
-        const nextName = playerNames[finalState.currentTurn];
-        if (nextName === "Bot") {
-          setTimeout(() => playBotTurn(finalState), 1000);
-        }
-      }
     }
   };
 
