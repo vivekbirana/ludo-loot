@@ -194,6 +194,7 @@ const GameScreen = () => {
             onRoll={handleRollDice}
             canRoll={isMyTurn && gameState.turnPhase === "rolling"}
             rolling={rolling}
+            turnColor={currentTurnColor}
           />
         ) : (
           <div className="text-center text-sm text-muted-foreground">
