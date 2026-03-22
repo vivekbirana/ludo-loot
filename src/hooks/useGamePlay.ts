@@ -253,6 +253,10 @@ export function useGamePlay(roomId: string | null) {
             // Don't overwrite local state during animation or bot turns
             if (!animatingRef.current && !botPlayingRef.current) {
               setGameState(incoming);
+              // If playerIndex hasn't been set yet, reload full game state to set player metadata
+              if (playerIndex === null && !isSpectator) {
+                loadGameState();
+              }
             }
           }
         }
