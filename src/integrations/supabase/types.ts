@@ -14,7 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      otp_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          verified: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          verified?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
