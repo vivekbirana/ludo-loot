@@ -31,7 +31,10 @@ export function useGamePlay(roomId: string | null) {
       .eq("id", roomId)
       .single();
 
-    if (room) setRoomCode(room.code);
+    if (room) {
+      setRoomCode(room.code);
+      setBetAmount(room.bet_amount);
+    }
 
     const { data: players } = await supabase
       .from("room_players")
