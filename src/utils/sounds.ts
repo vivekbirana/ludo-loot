@@ -45,7 +45,7 @@ export function playTokenMoveSound() {
   const ctx = getAudioContext();
 
   const osc = ctx.createOscillator();
-  const gain = ctx.createGainNode();
+  const gain = ctx.createGain();
 
   osc.type = "sine";
   osc.frequency.setValueAtTime(600, ctx.currentTime);
