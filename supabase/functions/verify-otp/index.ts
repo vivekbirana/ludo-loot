@@ -6,6 +6,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+function phoneToEmail(phone: string): string {
+  // Convert +919876543210 to 919876543210@ludo.local
+  return `${phone.replace("+", "")}@ludo.local`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -59,11 +64,9 @@ Deno.serve(async (req) => {
       .update({ verified: true })
       .eq("id", otpRecord.id);
 
-    // Check if user exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    let user = existingUsers?.users?.find((u) => u.phone === phone);
+    const email = phoneToEmail(phone);
 
-    // Generate a deterministic password using phone + service role key
+    // Generate a deterministic password
     const encoder = new TextEncoder();
     const secretKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const keyMaterial = await crypto.subtle.importKey(
@@ -80,12 +83,18 @@ Deno.serve(async (req) => {
     );
     const password = btoa(String.fromCharCode(...new Uint8Array(signature)));
 
+    // Check if user exists by listing and filtering
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    let user = existingUsers?.users?.find((u) => u.email === email);
+
     if (!user) {
-      // Create new user
+      // Create new user with email (phone stored in metadata + profiles table)
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        phone,
-        phone_confirm: true,
+        email,
+        email_confirm: true,
         password,
+        phone,
+        user_metadata: { phone },
       });
 
       if (createError) {
@@ -104,7 +113,7 @@ Deno.serve(async (req) => {
     );
 
     const { data: session, error: signInError } = await supabaseAnon.auth.signInWithPassword({
-      phone,
+      email,
       password,
     });
 
@@ -118,7 +127,7 @@ Deno.serve(async (req) => {
         session: session.session,
         user: {
           id: user!.id,
-          phone: user!.phone,
+          phone,
         },
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
