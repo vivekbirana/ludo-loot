@@ -143,9 +143,11 @@ export function createInitialGameState(playerCount: number): GameState {
       { position: "home", pathIndex: 0 },
     ]);
   }
+  // Blue (player 3) starts first; for 2 players use indices 0 and 2 (Red vs Yellow)
+  // Turn order: Blue(3) -> Red(0) -> Green(1) -> Yellow(2)
   return {
     tokens,
-    currentTurn: 0,
+    currentTurn: playerCount === 4 ? 3 : 0, // Blue starts in 4p, first player in 2p
     diceValue: null,
     turnPhase: "rolling",
     consecutiveSixes: 0,

@@ -20,6 +20,7 @@ export function useGamePlay(roomId: string | null) {
   const [turnTimer, setTurnTimer] = useState(30);
   const [isSpectator, setIsSpectator] = useState(false);
   const [roomCode, setRoomCode] = useState("");
+  const [betAmount, setBetAmount] = useState(0);
 
   const loadGameState = useCallback(async () => {
     if (!roomId) return;
@@ -30,7 +31,10 @@ export function useGamePlay(roomId: string | null) {
       .eq("id", roomId)
       .single();
 
-    if (room) setRoomCode(room.code);
+    if (room) {
+      setRoomCode(room.code);
+      setBetAmount(room.bet_amount);
+    }
 
     const { data: players } = await supabase
       .from("room_players")
@@ -255,6 +259,17 @@ export function useGamePlay(roomId: string | null) {
     }
   };
 
+  const handleQuitGame = async () => {
+    if (!roomId || !user) return;
+    // Remove player from room
+    await supabase
+      .from("room_players")
+      .delete()
+      .eq("room_id", roomId)
+      .eq("user_id", user.id);
+    toast.info("You left the game and forfeited your bet.");
+  };
+
   return {
     gameState,
     playerIndex,
@@ -263,7 +278,9 @@ export function useGamePlay(roomId: string | null) {
     turnTimer,
     isSpectator,
     roomCode,
+    betAmount,
     handleRollDice,
     handleTokenClick,
+    handleQuitGame,
   };
 }
