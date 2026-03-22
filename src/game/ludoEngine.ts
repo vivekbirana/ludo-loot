@@ -392,6 +392,15 @@ function checkAndKill(state: GameState, currentPlayer: number, pathIndex: number
   return killed;
 }
 
+// Center triangle positions for finished tokens (one per color index)
+// Each color gets a spot inside its triangle wedge near center (7.5, 7.5)
+const FINISHED_POSITIONS: { row: number; col: number }[] = [
+  { row: 7.1, col: 6.5 },   // Red (left wedge)
+  { row: 6.5, col: 7.5 },   // Green (top wedge)
+  { row: 7.1, col: 8.5 },   // Yellow (right wedge)
+  { row: 8.5, col: 7.5 },   // Blue (bottom wedge)
+];
+
 // Get pixel coordinates for a token on the board
 export function getTokenCoords(
   playerIndex: number,
@@ -399,7 +408,22 @@ export function getTokenCoords(
   tokenIndex: number,
   cellSize: number
 ): { x: number; y: number } | null {
-  if (token.position === "finished") return null;
+  if (token.position === "finished") {
+    // Place finished tokens in the center triangle area
+    const pos = FINISHED_POSITIONS[playerIndex];
+    // Offset each token slightly so they don't fully overlap
+    const offsets = [
+      { dx: -0.2, dy: -0.2 },
+      { dx: 0.2, dy: -0.2 },
+      { dx: -0.2, dy: 0.2 },
+      { dx: 0.2, dy: 0.2 },
+    ];
+    const off = offsets[tokenIndex] || { dx: 0, dy: 0 };
+    return {
+      x: (pos.col + off.dx) * cellSize + cellSize / 2,
+      y: (pos.row + off.dy) * cellSize + cellSize / 2,
+    };
+  }
 
   if (token.position === "home") {
     const origin = HOME_BASE_ORIGINS[playerIndex];
