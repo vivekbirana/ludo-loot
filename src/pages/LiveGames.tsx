@@ -47,10 +47,16 @@ const LiveGames = () => {
     });
 
     const roomIds = rooms.map((r) => r.id);
+    if (activeRoomIds.length === 0) {
+      setGames([]);
+      setLoading(false);
+      return;
+    }
+
     const { data: players } = await supabase
       .from("room_players")
       .select("*")
-      .in("room_id", roomIds);
+      .in("room_id", activeRoomIds);
 
     const userIds = [...new Set((players || []).map((p) => p.user_id))];
     let profilesMap: Record<string, string> = {};
