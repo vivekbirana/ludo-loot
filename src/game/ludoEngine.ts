@@ -31,84 +31,85 @@ export const START_POSITIONS = [0, 13, 26, 39];
 export const SAFE_POSITIONS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
 
 // Main path coordinates (52 cells going clockwise)
-// Starting from Red's entry point
+// Standard Ludo: Red(TL) starts at (6,1), Green(TR) at (1,8), Yellow(BR) at (8,13), Blue(BL) at (13,6)
 export const MAIN_PATH: { row: number; col: number }[] = [
-  // Red start column going down (cells 0-4)
-  { row: 1, col: 6 },
-  { row: 2, col: 6 },
-  { row: 3, col: 6 },
-  { row: 4, col: 6 },
-  { row: 5, col: 6 },
-  // Turn right (cells 5-7)
-  { row: 5, col: 5 },
-  { row: 5, col: 4 },
-  { row: 5, col: 3 },
-  { row: 5, col: 2 },
-  { row: 5, col: 1 },
-  { row: 5, col: 0 },
-  // Turn down (cells 10-12)  
-  { row: 6, col: 0 },
-  { row: 7, col: 0 },
-  // Turn right going across bottom of left arm (cell 13)
-  { row: 8, col: 0 },
-  { row: 8, col: 1 },
-  { row: 8, col: 2 },
-  { row: 8, col: 3 },
-  { row: 8, col: 4 },
-  { row: 8, col: 5 },
-  // Turn down (cells 19-23)
-  { row: 9, col: 6 },
-  { row: 10, col: 6 },
-  { row: 11, col: 6 },
-  { row: 12, col: 6 },
-  { row: 13, col: 6 },
-  { row: 14, col: 6 },
-  // Turn right (cells 25-26)
-  { row: 14, col: 7 },
-  { row: 14, col: 8 },
-  // Turn up (cells 27-31)
-  { row: 13, col: 8 },
-  { row: 12, col: 8 },
-  { row: 11, col: 8 },
-  { row: 10, col: 8 },
-  { row: 9, col: 8 },
-  // Turn right (cells 32-37)
-  { row: 8, col: 9 },
-  { row: 8, col: 10 },
-  { row: 8, col: 11 },
-  { row: 8, col: 12 },
-  { row: 8, col: 13 },
-  { row: 8, col: 14 },
-  // Turn up (cells 38-39)
-  { row: 7, col: 14 },
-  { row: 6, col: 14 },
-  // Turn left (cells 40-45)
-  { row: 5, col: 14 },
-  { row: 5, col: 13 },
-  { row: 5, col: 12 },
-  { row: 5, col: 11 },
-  { row: 5, col: 10 },
-  { row: 5, col: 9 },
-  // Turn up (cells 46-51)
-  { row: 4, col: 8 },
-  { row: 3, col: 8 },
-  { row: 2, col: 8 },
-  { row: 1, col: 8 },
-  { row: 0, col: 8 },
-  { row: 0, col: 7 },
-  // Wraps to Red start
+  // Red start — left arm, row 6, going right (cells 0-4)
+  { row: 6, col: 1 },  // 0 — Red start/safe
+  { row: 6, col: 2 },  // 1
+  { row: 6, col: 3 },  // 2
+  { row: 6, col: 4 },  // 3
+  { row: 6, col: 5 },  // 4
+  // Top arm, col 6, going up (cells 5-10)
+  { row: 5, col: 6 },  // 5
+  { row: 4, col: 6 },  // 6
+  { row: 3, col: 6 },  // 7
+  { row: 2, col: 6 },  // 8 — safe
+  { row: 1, col: 6 },  // 9
+  { row: 0, col: 6 },  // 10
+  // Top connecting cells (cells 11-12)
+  { row: 0, col: 7 },  // 11
+  { row: 0, col: 8 },  // 12
+  // Top arm, col 8, going down (cells 13-17)
+  { row: 1, col: 8 },  // 13 — Green start/safe
+  { row: 2, col: 8 },  // 14
+  { row: 3, col: 8 },  // 15
+  { row: 4, col: 8 },  // 16
+  { row: 5, col: 8 },  // 17
+  // Right arm, row 6, going right (cells 18-23)
+  { row: 6, col: 9 },  // 18
+  { row: 6, col: 10 }, // 19
+  { row: 6, col: 11 }, // 20
+  { row: 6, col: 12 }, // 21 — safe
+  { row: 6, col: 13 }, // 22
+  { row: 6, col: 14 }, // 23
+  // Right connecting cells (cells 24-25)
+  { row: 7, col: 14 }, // 24
+  { row: 8, col: 14 }, // 25
+  // Right arm, row 8, going left (cells 26-30)
+  { row: 8, col: 13 }, // 26 — Yellow start/safe
+  { row: 8, col: 12 }, // 27
+  { row: 8, col: 11 }, // 28
+  { row: 8, col: 10 }, // 29
+  { row: 8, col: 9 },  // 30
+  // Bottom arm, col 8, going down (cells 31-36)
+  { row: 9, col: 8 },  // 31
+  { row: 10, col: 8 }, // 32
+  { row: 11, col: 8 }, // 33
+  { row: 12, col: 8 }, // 34 — safe
+  { row: 13, col: 8 }, // 35
+  { row: 14, col: 8 }, // 36
+  // Bottom connecting cells (cells 37-38)
+  { row: 14, col: 7 }, // 37
+  { row: 14, col: 6 }, // 38
+  // Bottom arm, col 6, going up (cells 39-43)
+  { row: 13, col: 6 }, // 39 — Blue start/safe
+  { row: 12, col: 6 }, // 40
+  { row: 11, col: 6 }, // 41
+  { row: 10, col: 6 }, // 42
+  { row: 9, col: 6 },  // 43
+  // Left arm, row 8, going left (cells 44-49)
+  { row: 8, col: 5 },  // 44
+  { row: 8, col: 4 },  // 45
+  { row: 8, col: 3 },  // 46
+  { row: 8, col: 2 },  // 47 — safe
+  { row: 8, col: 1 },  // 48
+  { row: 8, col: 0 },  // 49
+  // Left connecting cells (cells 50-51)
+  { row: 7, col: 0 },  // 50
+  { row: 6, col: 0 },  // 51
+  // Wraps back to cell 0: (6, 1)
 ];
 
-// Home column paths (5 cells each leading to center)
+// Home column paths (6 cells each leading to center)
 export const HOME_COLUMNS: { row: number; col: number }[][] = [
-  // Red: enters from top, goes down column 7
-  [{ row: 1, col: 7 }, { row: 2, col: 7 }, { row: 3, col: 7 }, { row: 4, col: 7 }, { row: 5, col: 7 }, { row: 6, col: 7 }],
-  // Green: enters from right, goes left row 7  
+  // Red (TL): enters from (6,0)→(7,0), goes right along row 7
   [{ row: 7, col: 1 }, { row: 7, col: 2 }, { row: 7, col: 3 }, { row: 7, col: 4 }, { row: 7, col: 5 }, { row: 7, col: 6 }],
-  // Yellow: enters from bottom, goes up column 7
-  [{ row: 13, col: 7 }, { row: 12, col: 7 }, { row: 11, col: 7 }, { row: 10, col: 7 }, { row: 9, col: 7 }, { row: 8, col: 7 }],
-  // Blue: enters from left, goes right row 7
+  // Green (TR): enters from (0,8)→(0,7), goes down along col 7
+  [{ row: 1, col: 7 }, { row: 2, col: 7 }, { row: 3, col: 7 }, { row: 4, col: 7 }, { row: 5, col: 7 }, { row: 6, col: 7 }],
+  // Yellow (BR): enters from (8,14)→(7,14), goes left along row 7
   [{ row: 7, col: 13 }, { row: 7, col: 12 }, { row: 7, col: 11 }, { row: 7, col: 10 }, { row: 7, col: 9 }, { row: 7, col: 8 }],
+  // Blue (BL): enters from (14,6)→(14,7), goes up along col 7
+  [{ row: 13, col: 7 }, { row: 12, col: 7 }, { row: 11, col: 7 }, { row: 10, col: 7 }, { row: 9, col: 7 }, { row: 8, col: 7 }],
 ];
 
 // Entry to home column: the main path index just before entering home column
