@@ -1,4 +1,4 @@
-import { Clock, Trophy, XCircle } from "lucide-react";
+import { Clock, Trophy, XCircle, Gamepad2 } from "lucide-react";
 import CoinBalance from "@/components/CoinBalance";
 import { cn } from "@/lib/utils";
 
