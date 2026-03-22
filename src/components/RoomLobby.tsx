@@ -119,6 +119,17 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyPro
           </Button>
         )}
 
+        {onFillBots && !isGameStarted && room.players.length < room.max_players && (
+          <Button
+            variant="outline"
+            onClick={onFillBots}
+            className="w-full font-heading font-bold border-dashed border-accent text-accent"
+          >
+            <Bot className="w-4 h-4 mr-2" />
+            Fill with Bots (Dev)
+          </Button>
+        )}
+
         {isCreator && allReady && !isGameStarted && (
           <Button
             onClick={onStart}
