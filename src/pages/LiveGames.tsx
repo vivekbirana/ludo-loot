@@ -32,18 +32,17 @@ const formatTimeAgo = (iso: string) => {
   return `${days}d ago`;
 };
 
-const FILTER_OPTIONS: { label: string; value: GameStatus | "all" }[] = [
+const FILTER_OPTIONS: { label: string; value: "all" | "live" | "completed" }[] = [
   { label: "All", value: "all" },
   { label: "Live", value: "live" },
-  { label: "Completed", value: "inactive" },
-  { label: "Forfeit", value: "forfeit" },
+  { label: "Completed", value: "completed" },
 ];
 
 const LiveGames = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState<LiveGame[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<GameStatus | "all">("all");
+  const [filter, setFilter] = useState<"all" | "live" | "completed">("all");
 
   const fetchLiveGames = useCallback(async () => {
     setLoading(true);
@@ -157,7 +156,12 @@ const LiveGames = () => {
     };
   }, [fetchLiveGames]);
 
-  const filteredGames = filter === "all" ? games : games.filter((g) => g.status === filter);
+  const filteredGames =
+    filter === "all"
+      ? games
+      : filter === "live"
+        ? games.filter((g) => g.status === "live")
+        : games.filter((g) => g.status !== "live"); // completed includes forfeit + inactive
   const activeCount = games.filter((g) => g.status === "live").length;
 
   return (
@@ -176,7 +180,9 @@ const LiveGames = () => {
           const count =
             opt.value === "all"
               ? games.length
-              : games.filter((g) => g.status === opt.value).length;
+              : opt.value === "live"
+                ? games.filter((g) => g.status === "live").length
+                : games.filter((g) => g.status !== "live").length;
           return (
             <button
               key={opt.value}
