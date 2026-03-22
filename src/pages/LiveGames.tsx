@@ -180,7 +180,9 @@ const LiveGames = () => {
           const count =
             opt.value === "all"
               ? games.length
-              : games.filter((g) => g.status === opt.value).length;
+              : opt.value === "live"
+                ? games.filter((g) => g.status === "live").length
+                : games.filter((g) => g.status !== "live").length;
           return (
             <button
               key={opt.value}
