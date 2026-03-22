@@ -22,6 +22,7 @@ import { useState } from "react";
 const GameScreen = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const [showLogs, setShowLogs] = useState(false);
   const {
     gameState,
     playerIndex,
@@ -31,6 +32,7 @@ const GameScreen = () => {
     isSpectator,
     roomCode,
     betAmount,
+    moveLogs,
     handleRollDice,
     handleTokenClick,
     handleQuitGame,
