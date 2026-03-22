@@ -131,7 +131,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               >
                 {idx}
               </text>
-              {isSafe && (() => {
+              {isSafe && !startColorMap[idx] && (() => {
                 const cx = cell.col * cellSize + cellSize / 2;
                 const cy = cell.row * cellSize + cellSize / 2;
                 const r = cellSize * 0.4;
@@ -145,7 +145,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                   <polygon
                     points={points}
                     fill="none"
-                    stroke={startColorMap[idx] ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.25)"}
+                    stroke="rgba(0,0,0,0.25)"
                     strokeWidth="1.2"
                   />
                 );
