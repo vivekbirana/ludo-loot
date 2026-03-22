@@ -71,35 +71,50 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         {HOME_BASE_ORIGINS.map((origin, idx) => (
           <g key={`home-${idx}`}>
             <rect
-              x={origin.col * cellSize + 2}
-              y={origin.row * cellSize + 2}
-              width={cellSize * 6 - 4}
-              height={cellSize * 6 - 4}
+              x={origin.col * cellSize}
+              y={origin.row * cellSize}
+              width={cellSize * 6}
+              height={cellSize * 6}
               fill={PLAYER_COLORS[idx]}
               opacity={0.2}
-              rx="8"
             />
             <rect
-              x={origin.col * cellSize + 2}
-              y={origin.row * cellSize + 2}
-              width={cellSize * 6 - 4}
-              height={cellSize * 6 - 4}
+              x={origin.col * cellSize}
+              y={origin.row * cellSize}
+              width={cellSize * 6}
+              height={cellSize * 6}
               fill="none"
               stroke={PLAYER_COLORS[idx]}
               strokeWidth="1.5"
               opacity={0.5}
-              rx="8"
             />
-            {/* Inner home area */}
-            <rect
-              x={(origin.col + 0.5) * cellSize}
-              y={(origin.row + 0.5) * cellSize}
-              width={cellSize * 5}
-              height={cellSize * 5}
-              fill={PLAYER_COLORS[idx]}
-              opacity={0.12}
-              rx="6"
-            />
+            {/* Grid overlay */}
+            {Array.from({ length: 6 }, (_, row) =>
+              Array.from({ length: 6 }, (_, col) => (
+                <g key={`grid-${idx}-${row}-${col}`}>
+                  <rect
+                    x={(origin.col + col) * cellSize}
+                    y={(origin.row + row) * cellSize}
+                    width={cellSize}
+                    height={cellSize}
+                    fill="none"
+                    stroke="rgba(0,0,0,0.15)"
+                    strokeWidth="0.5"
+                  />
+                  <text
+                    x={(origin.col + col) * cellSize + cellSize / 2}
+                    y={(origin.row + row) * cellSize + cellSize / 2 + 1}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="5"
+                    fill="rgba(0,0,0,0.3)"
+                    fontFamily="monospace"
+                  >
+                    {row},{col}
+                  </text>
+                </g>
+              ))
+            )}
           </g>
         ))}
 
