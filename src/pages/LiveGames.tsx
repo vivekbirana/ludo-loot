@@ -42,7 +42,7 @@ const LiveGames = () => {
   const navigate = useNavigate();
   const [games, setGames] = useState<LiveGame[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<GameStatus | "all">("all");
+  const [filter, setFilter] = useState<"all" | "live" | "completed">("all");
 
   const fetchLiveGames = useCallback(async () => {
     setLoading(true);
