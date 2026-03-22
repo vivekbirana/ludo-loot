@@ -28,6 +28,26 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots, onSelectColor 
 
   const myColor = currentPlayer?.color_index;
 
+  // Opposite color pairs: Red(0) <-> Yellow(2), Green(1) <-> Blue(3)
+  const OPPOSITE_MAP: Record<number, number> = { 0: 2, 2: 0, 1: 3, 3: 1 };
+
+  // For 2P mode, determine which colors are available
+  const getDisabledColors = (idx: number): boolean => {
+    const isTaken = takenColors.includes(idx) && myColor !== idx;
+    if (isTaken) return true;
+
+    // In 2P mode, if opponent picked a color, only allow the opposite
+    if (room.max_players === 2) {
+      const otherPlayer = room.players.find((p) => p.user_id !== user?.id && p.color_index != null);
+      if (otherPlayer?.color_index != null) {
+        return idx !== OPPOSITE_MAP[otherPlayer.color_index];
+      }
+      // If I already picked, the other player's options are restricted (handled on their side)
+      // But I can still switch freely
+    }
+    return false;
+  };
+
   return (
     <div className="space-y-6 animate-slide-up">
       {/* Room Header */}
