@@ -207,7 +207,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                   cx={coords.x + 1}
                   cy={coords.y + 1}
                   r={cellSize * 0.32}
-                  fill="rgba(0,0,0,0.3)"
+                  fill="rgba(0,0,0,0.12)"
                 />
                 {/* Token body */}
                 <circle
