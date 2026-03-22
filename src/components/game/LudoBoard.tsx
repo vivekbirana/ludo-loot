@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import {
   BOARD_SIZE,
   MAIN_PATH,
@@ -6,12 +6,14 @@ import {
   SAFE_POSITIONS,
   HOME_BASE_ORIGINS,
   PLAYER_COLORS,
+  PLAYER_COLORS_LIGHT,
   PLAYER_BG,
   GameState,
   getTokenCoords,
   getMovableTokens,
 } from "@/game/ludoEngine";
 import { cn } from "@/lib/utils";
+import { playTokenMoveSound } from "@/utils/sounds";
 
 interface LudoBoardProps {
   gameState: GameState;
@@ -23,6 +25,16 @@ interface LudoBoardProps {
 const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: LudoBoardProps) => {
   const boardWidth = 330;
   const cellSize = boardWidth / BOARD_SIZE;
+  const prevTokensRef = useRef<string>("");
+
+  // Play sound on token position changes
+  useEffect(() => {
+    const key = JSON.stringify(gameState.tokens);
+    if (prevTokensRef.current && prevTokensRef.current !== key) {
+      playTokenMoveSound();
+    }
+    prevTokensRef.current = key;
+  }, [gameState.tokens]);
 
   const movableTokens = useMemo(() => {
     if (
@@ -35,26 +47,6 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
     }
     return getMovableTokens(gameState);
   }, [gameState, currentPlayerId, isSpectator]);
-
-  // Build a set of main path coordinates for rendering
-  const pathCells = useMemo(() => {
-    const cells = new Map<string, { safe: boolean }>();
-    MAIN_PATH.forEach((cell, idx) => {
-      cells.set(`${cell.row}-${cell.col}`, { safe: SAFE_POSITIONS.has(idx) });
-    });
-    return cells;
-  }, []);
-
-  // Build home column cells
-  const homeColumnCells = useMemo(() => {
-    const cells = new Map<string, number>(); // key -> playerIndex
-    HOME_COLUMNS.forEach((column, playerIdx) => {
-      column.forEach((cell) => {
-        cells.set(`${cell.row}-${cell.col}`, playerIdx);
-      });
-    });
-    return cells;
-  }, []);
 
   const getSeatColorIndex = (seat: number) => gameState.colorOrder?.[seat] ?? seat;
 
@@ -82,7 +74,6 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 height={cellSize * 6}
                 fill="white"
               />
-              {/* Grid overlay */}
               {Array.from({ length: 6 }, (_, row) =>
                 Array.from({ length: 6 }, (_, col) => (
                   <g key={`grid-${idx}-${row}-${col}`}>
@@ -95,17 +86,6 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                       stroke="rgba(0,0,0,0.15)"
                       strokeWidth="0.5"
                     />
-                    <text
-                      x={(origin.col + col) * cellSize + cellSize / 2}
-                      y={(origin.row + row) * cellSize + cellSize / 2 + 1}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fontSize="5"
-                      fill="rgba(0,0,0,0.3)"
-                      fontFamily="monospace"
-                    >
-                      {row},{col}
-                    </text>
                   </g>
                 ))
               )}
@@ -116,7 +96,6 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         {/* Main path cells */}
         {MAIN_PATH.map((cell, idx) => {
           const isSafe = SAFE_POSITIONS.has(idx);
-          // Color start tiles with their player's color
           const startColorMap: Record<number, string> = { 13: PLAYER_COLORS[0], 26: PLAYER_COLORS[1], 39: PLAYER_COLORS[2], 0: PLAYER_COLORS[3] };
           const tileFill = startColorMap[idx] || "white";
           return (
@@ -130,17 +109,6 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 stroke="black"
                 strokeWidth="0.5"
               />
-              <text
-                x={cell.col * cellSize + cellSize / 2}
-                y={cell.row * cellSize + cellSize / 2 + (isSafe ? -3 : 1)}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="6"
-                fill={startColorMap[idx] ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.35)"}
-                fontFamily="monospace"
-              >
-                {idx}
-              </text>
               {isSafe && !startColorMap[idx] && (() => {
                 const cx = cell.col * cellSize + cellSize / 2;
                 const cy = cell.row * cellSize + cellSize / 2;
@@ -164,7 +132,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
           );
         })}
 
-        {/* Home columns */}
+        {/* Home columns - use lighter colors */}
         {HOME_COLUMNS.map((column, playerIdx) =>
           column.slice(0, 5).map((cell, cellIdx) => (
             <g key={`hc-${playerIdx}-${cellIdx}`}>
@@ -173,56 +141,37 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 y={cell.row * cellSize}
                 width={cellSize}
                 height={cellSize}
-                fill={PLAYER_COLORS[playerIdx]}
+                fill={PLAYER_COLORS_LIGHT[playerIdx]}
                 stroke="black"
                 strokeWidth="0.5"
               />
-              <text
-                x={cell.col * cellSize + cellSize / 2}
-                y={cell.row * cellSize + cellSize / 2 + 1}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="6"
-                fill="rgba(255,255,255,0.7)"
-                fontFamily="monospace"
-              >
-                H{cellIdx}
-              </text>
             </g>
           ))
         )}
 
-        {/* Center triangle / finish area */}
-        {/* Red: enters from left, triangle points right */}
+        {/* Center triangle / finish area - use lighter colors */}
         <polygon
           points={`${6 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${6 * cellSize},${9 * cellSize}`}
-          fill={PLAYER_COLORS[0]}
+          fill={PLAYER_COLORS_LIGHT[0]}
           opacity={1}
         />
-        <text x={6.5 * cellSize} y={7.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
-        {/* Green: enters from top, triangle points down */}
         <polygon
           points={`${6 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${6 * cellSize}`}
-          fill={PLAYER_COLORS[1]}
+          fill={PLAYER_COLORS_LIGHT[1]}
           opacity={1}
         />
-        <text x={7.5 * cellSize} y={6.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
-        {/* Yellow: enters from right, triangle points left */}
         <polygon
           points={`${9 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
-          fill={PLAYER_COLORS[2]}
+          fill={PLAYER_COLORS_LIGHT[2]}
           opacity={1}
         />
-        <text x={8.5 * cellSize} y={7.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
-        {/* Blue: enters from bottom, triangle points up */}
         <polygon
           points={`${6 * cellSize},${9 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
-          fill={PLAYER_COLORS[3]}
+          fill={PLAYER_COLORS_LIGHT[3]}
           opacity={1}
         />
-        <text x={7.5 * cellSize} y={8.5 * cellSize} textAnchor="middle" dominantBaseline="middle" fontSize="6" fill="rgba(255,255,255,0.7)" fontFamily="monospace">H5</text>
 
-        {/* Tokens */}
+        {/* Tokens with CSS transitions for movement */}
         {gameState.tokens.map((playerTokens, playerSeat) =>
           playerTokens.map((token, tokenIdx) => {
             const colorIdx = getSeatColorIndex(playerSeat);
@@ -238,13 +187,17 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
               <g
                 key={`token-${playerSeat}-${tokenIdx}`}
                 onClick={() => isMovable && onTokenClick(tokenIdx)}
-                style={{ cursor: isMovable ? "pointer" : "default" }}
+                style={{
+                  cursor: isMovable ? "pointer" : "default",
+                  transform: `translate(${coords.x}px, ${coords.y}px)`,
+                  transition: "transform 0.3s ease-in-out",
+                }}
               >
                 {/* Glow for movable tokens */}
                 {isMovable && (
                   <circle
-                    cx={coords.x}
-                    cy={coords.y}
+                    cx={0}
+                    cy={0}
                     r={cellSize * 0.42}
                     fill={color}
                     opacity={0.3}
@@ -253,15 +206,15 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 )}
                 {/* Token shadow */}
                 <circle
-                  cx={coords.x + 1}
-                  cy={coords.y + 1}
+                  cx={1}
+                  cy={1}
                   r={cellSize * 0.32}
                   fill="rgba(0,0,0,0.12)"
                 />
                 {/* Token body */}
                 <circle
-                  cx={coords.x}
-                  cy={coords.y}
+                  cx={0}
+                  cy={0}
                   r={cellSize * 0.32}
                   fill={color}
                   stroke={isMovable ? "#fff" : color}
@@ -270,8 +223,8 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 />
                 {/* Token inner */}
                 <circle
-                  cx={coords.x}
-                  cy={coords.y}
+                  cx={0}
+                  cy={0}
                   r={cellSize * 0.15}
                   fill="rgba(255,255,255,0.3)"
                 />
