@@ -193,8 +193,8 @@ export function getMovableTokens(state: GameState): number[] {
 
     if (token.position === "path") {
       const newPathIndex = (token.pathIndex + diceValue) % 52;
-      const startPos = START_POSITIONS[currentTurn];
-      const homeEntry = HOME_ENTRY_POSITIONS[currentTurn];
+      const playerColorIndex = getPlayerColorIndex(state, currentTurn);
+      const homeEntry = HOME_ENTRY_POSITIONS[playerColorIndex];
 
       // Check if token should enter home column
       const distToHome = ((homeEntry - token.pathIndex + 52) % 52);
