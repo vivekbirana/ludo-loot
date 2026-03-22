@@ -91,7 +91,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                       y={(origin.row + row) * cellSize}
                       width={cellSize}
                       height={cellSize}
-                      fill={isBorder(row, col) ? PLAYER_COLORS[idx] : "white"}
+                      fill={isBorder(row, col) ? PLAYER_BG[idx] : "white"}
                       stroke="rgba(0,0,0,0.15)"
                       strokeWidth="0.5"
                     />
