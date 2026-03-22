@@ -132,7 +132,8 @@ const GameScreen = () => {
           )}
         </div>
       )}
-      </div>
+
+
 
       {/* Player Info */}
       <div className="px-4 pb-2">
