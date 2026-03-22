@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, Timer, LogOut } from "lucide-react";
+import { ArrowLeft, Eye, Timer, LogOut, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -17,10 +17,12 @@ import DiceRoller from "@/components/game/DiceRoller";
 import PlayerInfoBar from "@/components/game/PlayerInfoBar";
 import { useGamePlay } from "@/hooks/useGamePlay";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/game/ludoEngine";
+import { useState } from "react";
 
 const GameScreen = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const [showLogs, setShowLogs] = useState(false);
   const {
     gameState,
     playerIndex,
@@ -30,6 +32,7 @@ const GameScreen = () => {
     isSpectator,
     roomCode,
     betAmount,
+    moveLogs,
     handleRollDice,
     handleTokenClick,
     handleQuitGame,
@@ -89,6 +92,14 @@ const GameScreen = () => {
           </AlertDialog>
         )}
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLogs((v) => !v)}
+            className="text-muted-foreground"
+          >
+            <ScrollText className="w-4 h-4" />
+          </Button>
           <span className="text-xs text-muted-foreground font-heading">#{roomCode}</span>
           {isSpectator && (
             <span className="flex items-center gap-1 text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full">
@@ -98,6 +109,31 @@ const GameScreen = () => {
           )}
         </div>
       </div>
+
+      {/* Move Logs Panel */}
+      {showLogs && (
+        <div className="mx-4 mb-2 glass rounded-lg p-2 max-h-32 overflow-y-auto">
+          <p className="text-xs font-heading font-bold text-muted-foreground mb-1">Move Log</p>
+          {moveLogs.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No moves yet</p>
+          ) : (
+            moveLogs.map((log) => (
+              <div key={log.id} className="flex items-center gap-2 text-xs py-0.5">
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: PLAYER_COLORS[log.colorIndex] }}
+                />
+                <span className="font-medium" style={{ color: PLAYER_COLORS[log.colorIndex] }}>
+                  {log.playerName}
+                </span>
+                <span className="text-muted-foreground">{log.action}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+
 
       {/* Player Info */}
       <div className="px-4 pb-2">

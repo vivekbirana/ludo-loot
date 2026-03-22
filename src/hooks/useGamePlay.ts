@@ -8,10 +8,22 @@ import {
   getMovableTokens,
   moveToken,
   getIntermediateSteps,
+  PLAYER_NAMES,
 } from "@/game/ludoEngine";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 import { playDiceRollSound, playTokenMoveSound } from "@/utils/sounds";
+
+export interface MoveLog {
+  id: number;
+  playerName: string;
+  colorIndex: number;
+  dice: number;
+  action: string; // e.g. "rolled 6, moved token out", "rolled 3, moved token"
+  timestamp: number;
+}
+
+let logIdCounter = 0;
 
 export function useGamePlay(roomId: string | null) {
   const { user } = useAuth();
@@ -23,9 +35,36 @@ export function useGamePlay(roomId: string | null) {
   const [isSpectator, setIsSpectator] = useState(false);
   const [roomCode, setRoomCode] = useState("");
   const [betAmount, setBetAmount] = useState(0);
+  const [moveLogs, setMoveLogs] = useState<MoveLog[]>([]);
   const animatingRef = useRef(false);
   const botPlayingRef = useRef(false);
   const playerNamesRef = useRef<string[]>([]);
+  const gameStateRef = useRef<GameState | null>(null);
+
+  // Keep refs in sync
+  useEffect(() => {
+    playerNamesRef.current = playerNames;
+  }, [playerNames]);
+
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  const addLog = useCallback((playerSeat: number, dice: number, action: string, state: GameState) => {
+    const colorIdx = state.colorOrder?.[playerSeat] ?? playerSeat;
+    const name = playerNamesRef.current[playerSeat] || PLAYER_NAMES[colorIdx];
+    setMoveLogs((prev) => {
+      const newLog: MoveLog = {
+        id: ++logIdCounter,
+        playerName: name,
+        colorIndex: colorIdx,
+        dice,
+        action,
+        timestamp: Date.now(),
+      };
+      return [newLog, ...prev].slice(0, 50); // Keep last 50 logs
+    });
+  }, []);
 
   const loadGameState = useCallback(async () => {
     if (!roomId) return;
@@ -187,7 +226,6 @@ export function useGamePlay(roomId: string | null) {
           const newState = payload.new;
           if (newState.token_positions) {
             const incoming = newState.token_positions as unknown as GameState;
-            // If we're the one animating, skip realtime updates (we handle locally)
             if (!animatingRef.current) {
               setGameState(incoming);
             }
@@ -201,11 +239,6 @@ export function useGamePlay(roomId: string | null) {
     };
   }, [roomId]);
 
-  // Keep ref in sync
-  useEffect(() => {
-    playerNamesRef.current = playerNames;
-  }, [playerNames]);
-
   // Auto-trigger bot turn whenever gameState changes and it's bot's turn
   useEffect(() => {
     if (!gameState || gameState.turnPhase === "finished" || gameState.winner !== null) return;
@@ -216,8 +249,10 @@ export function useGamePlay(roomId: string | null) {
     const currentName = names[gameState.currentTurn];
     if (currentName === "Bot") {
       botPlayingRef.current = true;
+      // Capture the current state to avoid stale closures
+      const capturedState = { ...gameState };
       const timer = setTimeout(() => {
-        playBotTurn(gameState).finally(() => {
+        playBotTurn(capturedState).finally(() => {
           botPlayingRef.current = false;
         });
       }, 1000);
@@ -232,7 +267,6 @@ export function useGamePlay(roomId: string | null) {
   useEffect(() => {
     if (!gameState || gameState.turnPhase === "finished") return;
 
-    // Don't run timer for bot turns
     const currentName = playerNamesRef.current[gameState.currentTurn];
     if (currentName === "Bot") return;
 
@@ -263,6 +297,7 @@ export function useGamePlay(roomId: string | null) {
       consecutiveSixes: 0,
     };
 
+    addLog(gameState.currentTurn, 0, "timed out, skipped turn", gameState);
     await saveGameState(newState);
   };
 
@@ -283,7 +318,6 @@ export function useGamePlay(roomId: string | null) {
       .eq("room_id", roomId);
   };
 
-  // Animate token step by step through intermediate positions
   const animateTokenMove = async (
     baseState: GameState,
     tokenIndex: number
@@ -297,10 +331,17 @@ export function useGamePlay(roomId: string | null) {
       await new Promise((r) => setTimeout(r, 150));
     }
 
-    // Final move
     const finalState = moveToken(baseState, tokenIndex);
     animatingRef.current = false;
     return finalState;
+  };
+
+  const describeMove = (state: GameState, tokenIndex: number, dice: number): string => {
+    const token = state.tokens[state.currentTurn][tokenIndex];
+    if (token.position === "home" && dice === 6) {
+      return `rolled ${dice}, moved token out`;
+    }
+    return `rolled ${dice}, moved token ${dice} steps`;
   };
 
   const handleRollDice = async () => {
@@ -312,13 +353,13 @@ export function useGamePlay(roomId: string | null) {
     await new Promise((r) => setTimeout(r, 600));
 
     const dice = rollDice();
-    // Save dice value immediately so opponent can see it
     const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving" };
     await saveGameState(diceState);
     setRolling(false);
 
     const movable = getMovableTokens(diceState);
     if (movable.length === 0) {
+      addLog(playerIndex, dice, `rolled ${dice}, no moves`, diceState);
       await new Promise((r) => setTimeout(r, 500));
       const newState: GameState = {
         ...diceState,
@@ -329,6 +370,7 @@ export function useGamePlay(roomId: string | null) {
       };
       await saveGameState(newState);
     } else if (movable.length === 1) {
+      addLog(playerIndex, dice, describeMove(diceState, movable[0], dice), diceState);
       const finalState = await animateTokenMove(diceState, movable[0]);
       await saveGameState(finalState);
     }
@@ -343,15 +385,16 @@ export function useGamePlay(roomId: string | null) {
     const movable = getMovableTokens(gameState);
     if (!movable.includes(tokenIndex)) return;
 
+    addLog(playerIndex, gameState.diceValue || 0, describeMove(gameState, tokenIndex, gameState.diceValue || 0), gameState);
     const finalState = await animateTokenMove(gameState, tokenIndex);
     await saveGameState(finalState);
   };
 
   const playBotTurn = async (state: GameState) => {
+    // Use the passed state directly, not gameState from closure
     playDiceRollSound(500);
     await new Promise((r) => setTimeout(r, 600));
     const dice = rollDice();
-    // Save dice value first so player can see bot's dice
     const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
     await saveGameState(diceState);
 
@@ -359,6 +402,7 @@ export function useGamePlay(roomId: string | null) {
 
     const movable = getMovableTokens(diceState);
     if (movable.length === 0) {
+      addLog(state.currentTurn, dice, `rolled ${dice}, no moves`, diceState);
       const newState: GameState = {
         ...diceState,
         currentTurn: (diceState.currentTurn + 1) % diceState.playerCount,
@@ -369,6 +413,7 @@ export function useGamePlay(roomId: string | null) {
       await saveGameState(newState);
     } else {
       const chosen = movable[Math.floor(Math.random() * movable.length)];
+      addLog(state.currentTurn, dice, describeMove(diceState, chosen, dice), diceState);
       const finalState = await animateTokenMove(diceState, chosen);
       await saveGameState(finalState);
     }
@@ -393,6 +438,7 @@ export function useGamePlay(roomId: string | null) {
     isSpectator,
     roomCode,
     betAmount,
+    moveLogs,
     handleRollDice,
     handleTokenClick,
     handleQuitGame,
