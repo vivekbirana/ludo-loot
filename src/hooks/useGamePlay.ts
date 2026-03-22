@@ -10,6 +10,7 @@ import {
   getIntermediateSteps,
   PLAYER_NAMES,
 } from "@/game/ludoEngine";
+import { smartRollDice } from "@/game/smartDice";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 import { playDiceRollSound, playTokenMoveSound } from "@/utils/sounds";
