@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import RoomCard from "@/components/RoomCard";
@@ -15,15 +15,19 @@ import {
 import CoinBalance from "@/components/CoinBalance";
 import { cn } from "@/lib/utils";
 import { useGameRooms } from "@/hooks/useGameRooms";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const betAmounts = [50, 100, 200, 500];
 const playerModes = [2, 3, 4];
 
 const Play = () => {
+  const { user } = useAuth();
   const [selectedBet, setSelectedBet] = useState(100);
   const [selectedMode, setSelectedMode] = useState(2);
   const [roomCode, setRoomCode] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeGameId, setActiveGameId] = useState<string | null>(null);
 
   const {
     rooms,
@@ -38,6 +42,50 @@ const Play = () => {
     startGame,
     fillWithBots,
   } = useGameRooms();
+
+  // Check for active games user can rejoin
+  useEffect(() => {
+    if (!user) return;
+    const checkActiveGames = async () => {
+      // Find rooms where user is a player and game is in_progress
+      const { data: myRoomPlayers } = await supabase
+        .from("room_players")
+        .select("room_id")
+        .eq("user_id", user.id);
+
+      if (!myRoomPlayers || myRoomPlayers.length === 0) {
+        setActiveGameId(null);
+        return;
+      }
+
+      const roomIds = myRoomPlayers.map((rp) => rp.room_id);
+      const { data: activeRooms } = await supabase
+        .from("game_rooms")
+        .select("id")
+        .in("id", roomIds)
+        .eq("status", "in_progress");
+
+      if (activeRooms && activeRooms.length > 0) {
+        // Check if the game state is not finished
+        const { data: states } = await supabase
+          .from("game_states")
+          .select("room_id, token_positions")
+          .in("room_id", activeRooms.map((r) => r.id));
+
+        const unfinished = activeRooms.find((room) => {
+          const gs = states?.find((s) => s.room_id === room.id);
+          if (!gs) return true; // no state yet, still active
+          const tp = gs.token_positions as any;
+          return tp?.turnPhase !== "finished" && tp?.winner === null;
+        });
+
+        setActiveGameId(unfinished?.id || null);
+      } else {
+        setActiveGameId(null);
+      }
+    };
+    checkActiveGames();
+  }, [user, currentRoom]);
 
   const handleCreateRoom = async () => {
     await createRoom(selectedBet, selectedMode);
@@ -78,6 +126,23 @@ const Play = () => {
 
   return (
     <div className="px-4 pt-6 space-y-6">
+      {/* Rejoin Banner */}
+      {activeGameId && (
+        <div className="glass rounded-xl p-4 flex items-center justify-between border border-accent/30 animate-slide-up">
+          <div>
+            <p className="font-heading font-bold text-sm">Game in Progress!</p>
+            <p className="text-xs text-muted-foreground">You have an active game. Rejoin to continue playing.</p>
+          </div>
+          <Button
+            size="sm"
+            className="bg-gradient-primary font-heading font-bold text-primary-foreground shadow-glow"
+            onClick={() => navigate(`/game/${activeGameId}`)}
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1" />
+            Rejoin
+          </Button>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-heading font-bold">Play</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
