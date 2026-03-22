@@ -47,10 +47,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get current player count
+    // Get current players with their color selections
     const { data: existingPlayers } = await supabaseAdmin
       .from("room_players")
-      .select("id")
+      .select("id, color_index")
       .eq("room_id", room_id);
 
     const currentCount = existingPlayers?.length || 0;
@@ -64,12 +64,18 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Find available colors (0=Red, 1=Green, 2=Yellow, 3=Blue)
+    const takenColors = (existingPlayers || [])
+      .map((p: any) => p.color_index)
+      .filter((c: any) => c != null);
+    const availableColors = [0, 1, 2, 3].filter((c) => !takenColors.includes(c));
+
     const botNames = ["Bot Alpha", "Bot Beta", "Bot Gamma"];
     const bots = [];
 
     for (let i = 0; i < botsToAdd; i++) {
-      // Generate a deterministic bot UUID using crypto
       const botId = crypto.randomUUID();
+      const botColor = availableColors[i] ?? i;
 
       const { error: insertError } = await supabaseAdmin
         .from("room_players")
@@ -77,6 +83,7 @@ Deno.serve(async (req) => {
           room_id,
           user_id: botId,
           is_ready: true,
+          color_index: botColor,
         });
 
       if (insertError) {

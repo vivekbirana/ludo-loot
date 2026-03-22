@@ -22,6 +22,7 @@ export interface RoomPlayer {
   is_ready: boolean;
   joined_at: string;
   display_name?: string;
+  color_index?: number | null;
 }
 
 function generateRoomCode(): string {
@@ -225,6 +226,32 @@ export function useGameRooms() {
     }
   };
 
+  const selectColor = async (colorIndex: number) => {
+    if (!user || !currentRoom) return;
+
+    const player = currentRoom.players.find((p) => p.user_id === user.id);
+    if (!player) return;
+
+    // Check if color is taken by another player
+    const taken = currentRoom.players.some(
+      (p) => p.user_id !== user.id && p.color_index === colorIndex
+    );
+    if (taken) {
+      toast.error("That color is already taken!");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("room_players")
+      .update({ color_index: colorIndex } as any)
+      .eq("id", player.id);
+
+    if (error) {
+      toast.error("Failed to select color");
+      console.error(error);
+    }
+  };
+
   const leaveRoom = async () => {
     if (!user || !currentRoom) return;
 
@@ -303,6 +330,7 @@ export function useGameRooms() {
     joinRoom,
     joinByCode,
     toggleReady,
+    selectColor,
     leaveRoom,
     startGame,
     fillWithBots,

@@ -33,6 +33,7 @@ const Play = () => {
     joinRoom,
     joinByCode,
     toggleReady,
+    selectColor,
     leaveRoom,
     startGame,
     fillWithBots,
@@ -67,6 +68,7 @@ const Play = () => {
           onLeave={leaveRoom}
           onStart={startGame}
           onFillBots={fillWithBots}
+          onSelectColor={selectColor}
         />
       </div>
     );

@@ -1,0 +1,1 @@
+ALTER TABLE public.room_players ADD COLUMN color_index integer DEFAULT NULL;
