@@ -118,13 +118,25 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
                 strokeWidth="0.5"
                 rx="2"
               />
+              {/* Dev: path index number */}
+              <text
+                x={cell.col * cellSize + cellSize / 2}
+                y={cell.row * cellSize + cellSize / 2 + (isSafe ? -3 : 1)}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="6"
+                fill="rgba(0,0,0,0.35)"
+                fontFamily="monospace"
+              >
+                {idx}
+              </text>
               {isSafe && (
                 <text
                   x={cell.col * cellSize + cellSize / 2}
-                  y={cell.row * cellSize + cellSize / 2 + 1}
+                  y={cell.row * cellSize + cellSize / 2 + 5}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fontSize="8"
+                  fontSize="6"
                   fill="hsl(155, 50%, 40%)"
                 >
                   ★
