@@ -135,6 +135,7 @@ export interface GameState {
   consecutiveSixes: number;
   winner: number | null;
   playerCount: number;
+  skipCounts?: number[]; // [playerSeat] -> consecutive skip count
 }
 
 export function createInitialGameState(playerCount: number, colorOrder?: number[]): GameState {
