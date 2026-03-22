@@ -179,25 +179,29 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         )}
 
         {/* Center triangle / finish area */}
+        {/* Red: enters from left, triangle points right */}
         <polygon
-          points={`${7 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${6 * cellSize},${7 * cellSize}`}
+          points={`${6 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${6 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[0]}
-          opacity={0.3}
+          opacity={0.4}
         />
+        {/* Green: enters from top, triangle points down */}
         <polygon
-          points={`${6 * cellSize},${7 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${7 * cellSize},${8 * cellSize}`}
+          points={`${6 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${6 * cellSize}`}
           fill={PLAYER_COLORS[1]}
-          opacity={0.3}
+          opacity={0.4}
         />
+        {/* Yellow: enters from right, triangle points left */}
         <polygon
-          points={`${7 * cellSize},${8 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${7 * cellSize}`}
+          points={`${9 * cellSize},${6 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[2]}
-          opacity={0.3}
+          opacity={0.4}
         />
+        {/* Blue: enters from bottom, triangle points up */}
         <polygon
-          points={`${9 * cellSize},${7 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${8 * cellSize},${6 * cellSize}`}
+          points={`${6 * cellSize},${9 * cellSize} ${7.5 * cellSize},${7.5 * cellSize} ${9 * cellSize},${9 * cellSize}`}
           fill={PLAYER_COLORS[3]}
-          opacity={0.3}
+          opacity={0.4}
         />
 
         {/* Tokens */}
