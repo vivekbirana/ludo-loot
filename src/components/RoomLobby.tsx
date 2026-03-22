@@ -4,6 +4,7 @@ import CoinBalance from "@/components/CoinBalance";
 import { GameRoom } from "@/hooks/useGameRooms";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { PLAYER_COLORS, PLAYER_NAMES } from "@/game/ludoEngine";
 
 interface RoomLobbyProps {
   room: GameRoom;
@@ -11,14 +12,21 @@ interface RoomLobbyProps {
   onLeave: () => void;
   onStart: () => void;
   onFillBots?: () => void;
+  onSelectColor?: (colorIndex: number) => void;
 }
 
-const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyProps) => {
+const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots, onSelectColor }: RoomLobbyProps) => {
   const { user } = useAuth();
   const isCreator = user?.id === room.created_by;
   const currentPlayer = room.players.find((p) => p.user_id === user?.id);
   const allReady = room.players.length >= 2 && room.players.every((p) => p.is_ready);
   const isGameStarted = room.status === "in_progress";
+
+  const takenColors = room.players
+    .filter((p) => p.color_index != null)
+    .map((p) => p.color_index!);
+
+  const myColor = currentPlayer?.color_index;
 
   return (
     <div className="space-y-6 animate-slide-up">
@@ -38,6 +46,44 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyPro
         </div>
       </div>
 
+      {/* Color Selection */}
+      {currentPlayer && !isGameStarted && (
+        <div className="glass rounded-xl p-4 space-y-3">
+          <h3 className="text-sm font-heading font-bold text-muted-foreground uppercase tracking-wider">
+            Choose Your Color
+          </h3>
+          <div className="flex justify-center gap-3">
+            {PLAYER_COLORS.map((color, idx) => {
+              const isTaken = takenColors.includes(idx) && myColor !== idx;
+              const isSelected = myColor === idx;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => !isTaken && onSelectColor?.(idx)}
+                  disabled={isTaken}
+                  className={cn(
+                    "w-12 h-12 rounded-full border-3 transition-all flex items-center justify-center",
+                    isSelected && "ring-2 ring-offset-2 ring-foreground scale-110",
+                    isTaken && "opacity-30 cursor-not-allowed",
+                    !isTaken && !isSelected && "hover:scale-105 cursor-pointer"
+                  )}
+                  style={{
+                    backgroundColor: color,
+                    borderColor: isSelected ? "white" : "transparent",
+                  }}
+                >
+                  {isSelected && <Check className="w-5 h-5 text-white" />}
+                  {isTaken && <X className="w-5 h-5 text-white" />}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-center text-muted-foreground">
+            {myColor != null ? `You are ${PLAYER_NAMES[myColor]}` : "Pick a color to play"}
+          </p>
+        </div>
+      )}
+
       {/* Players List */}
       <div className="space-y-2">
         <h3 className="text-sm font-heading font-bold text-muted-foreground uppercase tracking-wider">
@@ -45,6 +91,7 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyPro
         </h3>
         {Array.from({ length: room.max_players }).map((_, i) => {
           const player = room.players[i];
+          const playerColor = player?.color_index != null ? PLAYER_COLORS[player.color_index] : undefined;
           return (
             <div
               key={i}
@@ -56,11 +103,12 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyPro
               <div className="flex items-center gap-3">
                 <div
                   className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center font-heading font-bold text-sm",
-                    player
-                      ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground"
+                    "w-10 h-10 rounded-full flex items-center justify-center font-heading font-bold text-sm"
                   )}
+                  style={{
+                    backgroundColor: playerColor || (player ? "hsl(var(--primary) / 0.2)" : "hsl(var(--muted))"),
+                    color: playerColor ? "white" : (player ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))"),
+                  }}
                 >
                   {player ? (player.display_name?.[0] || "P") : "?"}
                 </div>
@@ -69,6 +117,11 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyPro
                     {player?.display_name || "Waiting..."}
                     {player && player.user_id === room.created_by && (
                       <Crown className="w-3.5 h-3.5 text-accent" />
+                    )}
+                    {player?.color_index != null && (
+                      <span className="text-xs font-normal" style={{ color: PLAYER_COLORS[player.color_index] }}>
+                        ({PLAYER_NAMES[player.color_index]})
+                      </span>
                     )}
                   </p>
                   {player && (
@@ -108,6 +161,7 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyPro
         {!isGameStarted && currentPlayer && (
           <Button
             onClick={onReady}
+            disabled={myColor == null}
             className={cn(
               "w-full font-heading font-bold text-lg py-6",
               currentPlayer.is_ready
@@ -115,7 +169,7 @@ const RoomLobby = ({ room, onReady, onLeave, onStart, onFillBots }: RoomLobbyPro
                 : "bg-gradient-primary text-primary-foreground shadow-glow"
             )}
           >
-            {currentPlayer.is_ready ? "Cancel Ready" : "I'm Ready!"}
+            {myColor == null ? "Select a color first" : currentPlayer.is_ready ? "Cancel Ready" : "I'm Ready!"}
           </Button>
         )}
 
