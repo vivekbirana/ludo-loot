@@ -30,11 +30,35 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
   const cellSize = boardWidth / BOARD_SIZE;
   const prevTokensRef = useRef<string>("");
 
-  // Play sound on token position changes
+  // Play sound on token position changes — detect captures and home finishes
   useEffect(() => {
     const key = JSON.stringify(gameState.tokens);
     if (prevTokensRef.current && prevTokensRef.current !== key) {
-      playTokenMoveSound();
+      const prevTokens = JSON.parse(prevTokensRef.current);
+      
+      // Check if any token was captured (went from path/home_column back to home)
+      let captured = false;
+      let finished = false;
+      for (let p = 0; p < gameState.tokens.length; p++) {
+        for (let t = 0; t < gameState.tokens[p].length; t++) {
+          const prev = prevTokens[p]?.[t];
+          const curr = gameState.tokens[p][t];
+          if (prev && prev.position !== "home" && curr.position === "home") {
+            captured = true;
+          }
+          if (prev && prev.position !== "finished" && curr.position === "finished") {
+            finished = true;
+          }
+        }
+      }
+
+      if (captured) {
+        playCaptureSound();
+      } else if (finished) {
+        playHomeFinishSound();
+      } else {
+        playTokenMoveSound();
+      }
     }
     prevTokensRef.current = key;
   }, [gameState.tokens]);
