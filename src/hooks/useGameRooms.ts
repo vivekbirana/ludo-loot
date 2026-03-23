@@ -190,15 +190,14 @@ export function useGameRooms() {
       return;
     }
 
-    // Check wallet balance
-    const { data: wallet } = await supabase
-      .from("wallets")
-      .select("balance")
-      .eq("user_id", user.id)
-      .single();
+    // Deduct bet upfront
+    const { error: deductError } = await supabase.functions.invoke("deduct-bet", {
+      body: { action: "deduct", bet_amount: room.bet_amount },
+    });
 
-    if (!wallet || wallet.balance < room.bet_amount) {
-      toast.error("Insufficient balance");
+    if (deductError) {
+      toast.error("Failed to deduct bet");
+      console.error(deductError);
       return;
     }
 
@@ -207,12 +206,16 @@ export function useGameRooms() {
       .insert({ room_id: roomId, user_id: user.id });
 
     if (error) {
+      // Refund if join fails
+      await supabase.functions.invoke("deduct-bet", {
+        body: { action: "refund", room_id: roomId },
+      });
       toast.error("Failed to join room");
       console.error(error);
       return;
     }
 
-    toast.success(`Joined room #${room.code}!`);
+    toast.success(`Joined room #${room.code}! ₹${room.bet_amount} deducted.`);
   };
 
   const joinByCode = async (code: string) => {
