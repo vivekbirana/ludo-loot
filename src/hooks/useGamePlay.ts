@@ -39,6 +39,7 @@ export function useGamePlay(roomId: string | null) {
   const [betAmount, setBetAmount] = useState(0);
   const [moveLogs, setMoveLogs] = useState<MoveLog[]>([]);
   const animatingRef = useRef(false);
+  const rollingRef = useRef(false);
   const botPlayingRef = useRef(false);
   const playerNamesRef = useRef<string[]>([]);
   const gameStateRef = useRef<GameState | null>(null);
@@ -256,7 +257,7 @@ export function useGamePlay(roomId: string | null) {
           const newState = payload.new as Record<string, unknown>;
           if (newState?.token_positions) {
             const incoming = newState.token_positions as unknown as GameState;
-            if (!animatingRef.current && !botPlayingRef.current) {
+            if (!animatingRef.current && !botPlayingRef.current && !rollingRef.current) {
               setGameState(incoming);
               // If playerIndex hasn't been set yet, reload to set player metadata
               if (playerIndexRef.current === null) {
@@ -419,6 +420,7 @@ export function useGamePlay(roomId: string | null) {
     if (gameState.turnPhase !== "rolling") return;
 
     setRolling(true);
+    rollingRef.current = true;
     await new Promise((r) => setTimeout(r, 600));
 
     const dice = smartRollDice(gameState, playerIndex);
@@ -428,6 +430,7 @@ export function useGamePlay(roomId: string | null) {
     const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving", skipCounts };
     await saveGameState(diceState);
     setRolling(false);
+    rollingRef.current = false;
 
     const movable = getMovableTokens(diceState);
     if (movable.length === 0) {
