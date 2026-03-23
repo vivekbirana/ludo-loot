@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playDiceRollSound } from "@/utils/sounds";
