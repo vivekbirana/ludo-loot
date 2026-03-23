@@ -4,27 +4,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   GameState,
   createInitialGameState,
-  rollDice,
   getMovableTokens,
-  moveToken,
   getIntermediateSteps,
   PLAYER_NAMES,
   START_POSITIONS,
   HOME_ENTRY_POSITIONS,
   SAFE_POSITIONS,
 } from "@/game/ludoEngine";
-import { smartRollDice } from "@/game/smartDice";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 import { playDiceRollSound, playTokenMoveSound } from "@/utils/sounds";
-import { pickBestMove } from "@/game/monteCarloBot";
 
 export interface MoveLog {
   id: number;
   playerName: string;
   colorIndex: number;
   dice: number;
-  action: string; // e.g. "rolled 6, moved token out", "rolled 3, moved token"
+  action: string;
   timestamp: number;
 }
 
@@ -49,17 +45,9 @@ export function useGamePlay(roomId: string | null) {
   const playerIndexRef = useRef<number | null>(null);
 
   // Keep refs in sync
-  useEffect(() => {
-    playerNamesRef.current = playerNames;
-  }, [playerNames]);
-
-  useEffect(() => {
-    gameStateRef.current = gameState;
-  }, [gameState]);
-
-  useEffect(() => {
-    playerIndexRef.current = playerIndex;
-  }, [playerIndex]);
+  useEffect(() => { playerNamesRef.current = playerNames; }, [playerNames]);
+  useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
+  useEffect(() => { playerIndexRef.current = playerIndex; }, [playerIndex]);
 
   const addLog = useCallback((playerSeat: number, dice: number, action: string, state: GameState) => {
     const colorIdx = state.colorOrder?.[playerSeat] ?? playerSeat;
@@ -73,10 +61,29 @@ export function useGamePlay(roomId: string | null) {
         action,
         timestamp: Date.now(),
       };
-      return [newLog, ...prev].slice(0, 50); // Keep last 50 logs
+      return [newLog, ...prev].slice(0, 50);
     });
   }, []);
 
+  // ── Edge function helper ──────────────────────────────────────
+  const invokeGameAction = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
+    const { data, error } = await supabase.functions.invoke("game-action", {
+      body: { action, roomId, ...extra },
+    });
+    if (error) {
+      console.error("game-action error:", error);
+      toast.error("Game action failed. Please try again.");
+      return null;
+    }
+    if (data?.error) {
+      console.error("game-action validation error:", data.error);
+      // Don't toast for expected validation errors like "Not your turn"
+      return null;
+    }
+    return data;
+  }, [roomId]);
+
+  // ── Load game state ───────────────────────────────────────────
   const loadGameState = useCallback(async () => {
     if (!roomId) return;
 
@@ -156,10 +163,7 @@ export function useGamePlay(roomId: string | null) {
             ? colorOrderFromPlayers
             : Array.from({ length: resolvedPlayerCount }, (_, i) => i);
 
-      const fallbackInitial = createInitialGameState(
-        resolvedPlayerCount,
-        resolvedColorOrder
-      );
+      const fallbackInitial = createInitialGameState(resolvedPlayerCount, resolvedColorOrder);
 
       const resolvedCurrentTurn =
         typeof parsedRaw.currentTurn === "number" &&
@@ -172,22 +176,15 @@ export function useGamePlay(roomId: string | null) {
         tokens: parsedRaw.tokens || fallbackInitial.tokens,
         colorOrder: resolvedColorOrder,
         currentTurn: resolvedCurrentTurn,
-        diceValue:
-          typeof parsedRaw.diceValue === "number" ? parsedRaw.diceValue : null,
+        diceValue: typeof parsedRaw.diceValue === "number" ? parsedRaw.diceValue : null,
         turnPhase:
           parsedRaw.turnPhase === "moving" || parsedRaw.turnPhase === "finished"
             ? parsedRaw.turnPhase
             : "rolling",
-        consecutiveSixes:
-          typeof parsedRaw.consecutiveSixes === "number"
-            ? parsedRaw.consecutiveSixes
-            : 0,
-        winner:
-          typeof parsedRaw.winner === "number" ? parsedRaw.winner : null,
+        consecutiveSixes: typeof parsedRaw.consecutiveSixes === "number" ? parsedRaw.consecutiveSixes : 0,
+        winner: typeof parsedRaw.winner === "number" ? parsedRaw.winner : null,
         playerCount: resolvedPlayerCount,
-        skipCounts: Array.isArray(parsedRaw.skipCounts)
-          ? parsedRaw.skipCounts
-          : Array(resolvedPlayerCount).fill(0),
+        skipCounts: Array.isArray(parsedRaw.skipCounts) ? parsedRaw.skipCounts : Array(resolvedPlayerCount).fill(0),
       };
 
       setGameState(parsed);
@@ -219,50 +216,39 @@ export function useGamePlay(roomId: string | null) {
     }
   }, [roomId, user]);
 
-  useEffect(() => {
-    loadGameState();
-  }, [loadGameState]);
+  useEffect(() => { loadGameState(); }, [loadGameState]);
 
-  // Poll for game state if not loaded yet (handles case where player 2 loads before creator inserts state)
+  // Poll for game state if not loaded yet
   useEffect(() => {
     if (!roomId || gameState) return;
-
     const pollInterval = setInterval(async () => {
       const { data } = await supabase
         .from("game_states")
         .select("*")
         .eq("room_id", roomId)
         .single();
-
       if (data) {
         clearInterval(pollInterval);
         loadGameState();
       }
     }, 2000);
-
     return () => clearInterval(pollInterval);
   }, [roomId, gameState, loadGameState]);
 
+  // Realtime subscription
   useEffect(() => {
     if (!roomId) return;
-
     const channel = supabase
       .channel(`game-${roomId}`)
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "game_states",
-          filter: `room_id=eq.${roomId}`,
-        },
+        { event: "*", schema: "public", table: "game_states", filter: `room_id=eq.${roomId}` },
         (payload) => {
           const newState = payload.new as Record<string, unknown>;
           if (newState?.token_positions) {
             const incoming = newState.token_positions as unknown as GameState;
             if (!animatingRef.current && !botPlayingRef.current && !rollingRef.current) {
               setGameState(incoming);
-              // If playerIndex hasn't been set yet, reload to set player metadata
               if (playerIndexRef.current === null) {
                 loadGameState();
               }
@@ -271,13 +257,10 @@ export function useGamePlay(roomId: string | null) {
         }
       )
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [roomId]);
 
-  // Auto-trigger bot turn whenever gameState changes and it's bot's turn
+  // Auto-trigger bot turn
   useEffect(() => {
     if (!gameState || gameState.turnPhase === "finished" || gameState.winner !== null) return;
     if (gameState.turnPhase !== "rolling") return;
@@ -287,24 +270,19 @@ export function useGamePlay(roomId: string | null) {
     const currentName = names[gameState.currentTurn];
     if (currentName === "Bot") {
       botPlayingRef.current = true;
-      // Capture the current state to avoid stale closures
       const capturedState = { ...gameState };
       const timer = setTimeout(() => {
         playBotTurn(capturedState).finally(() => {
           botPlayingRef.current = false;
         });
       }, 1000);
-      return () => {
-        clearTimeout(timer);
-        botPlayingRef.current = false;
-      };
+      return () => { clearTimeout(timer); botPlayingRef.current = false; };
     }
   }, [gameState?.currentTurn, gameState?.turnPhase, gameState?.diceValue]);
 
-  // Turn timer - only for human players
+  // Turn timer — only for human players
   useEffect(() => {
     if (!gameState || gameState.turnPhase === "finished") return;
-
     const currentName = playerNamesRef.current[gameState.currentTurn];
     if (currentName === "Bot") return;
 
@@ -320,177 +298,69 @@ export function useGamePlay(roomId: string | null) {
         return prev - 1;
       });
     }, 1000);
-
     return () => clearInterval(interval);
   }, [gameState?.currentTurn, gameState?.turnPhase]);
 
-  const handleAutoSkip = async () => {
-    if (!gameState || !roomId) return;
-
-    const MAX_SKIPS = 5;
-    const skipCounts = [...(gameState.skipCounts || Array(gameState.playerCount).fill(0))];
-    skipCounts[gameState.currentTurn] = (skipCounts[gameState.currentTurn] || 0) + 1;
-
-    addLog(gameState.currentTurn, 0, `timed out (${skipCounts[gameState.currentTurn]}/${MAX_SKIPS})`, gameState);
-
-    // Auto-forfeit: if player skipped 5 times, opponent wins
-    if (skipCounts[gameState.currentTurn] >= MAX_SKIPS) {
-      const winnerSeat = (gameState.currentTurn + 1) % gameState.playerCount;
-      const forfeitState: GameState = {
-        ...gameState,
-        turnPhase: "finished",
-        winner: winnerSeat,
-        diceValue: null,
-        skipCounts,
-      };
-
-      addLog(gameState.currentTurn, 0, "auto-forfeited (5 skips)", gameState);
-      toast.error("Player auto-forfeited after 5 missed turns!");
-      await saveGameState(forfeitState);
-      await supabase.from("game_rooms").update({ status: "finished" }).eq("id", roomId);
-      return;
-    }
-
-    // Auto-play: roll dice and make a move if possible
-    if (gameState.turnPhase === "rolling") {
-      const dice = smartRollDice(gameState, gameState.currentTurn);
-      const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving", skipCounts };
-      await saveGameState(diceState);
-
-      await new Promise((r) => setTimeout(r, 300));
-
-      const movable = getMovableTokens(diceState);
-      if (movable.length === 0) {
-        addLog(gameState.currentTurn, dice, `auto-rolled ${dice}, no moves`, diceState);
-        const newState: GameState = {
-          ...diceState,
-          currentTurn: (diceState.currentTurn + 1) % diceState.playerCount,
-          turnPhase: "rolling",
-          diceValue: null,
-          consecutiveSixes: 0,
-        };
-        await saveGameState(newState);
-      } else {
-        // Pick the first movable token (simple auto-move)
-        const chosen = movable[0];
-        addLog(gameState.currentTurn, dice, `auto: ${describeMove(diceState, chosen, dice)}`, diceState);
-        const finalState = await animateTokenMove(diceState, chosen);
-        await saveGameState(finalState);
-      }
-    } else if (gameState.turnPhase === "moving") {
-      // Player rolled but didn't pick a token — auto-pick first movable
-      const movable = getMovableTokens(gameState);
-      if (movable.length > 0) {
-        const chosen = movable[0];
-        addLog(gameState.currentTurn, gameState.diceValue || 0, `auto: ${describeMove(gameState, chosen, gameState.diceValue || 0)}`, gameState);
-        const finalState = await animateTokenMove(gameState, chosen);
-        await saveGameState(finalState);
-      } else {
-        const newState: GameState = {
-          ...gameState,
-          currentTurn: (gameState.currentTurn + 1) % gameState.playerCount,
-          turnPhase: "rolling",
-          diceValue: null,
-          consecutiveSixes: 0,
-          skipCounts,
-        };
-        await saveGameState(newState);
-      }
-    }
-  };
-
-  const saveGameState = async (newState: GameState) => {
+  // ── Match recording (client-side, needs move logs) ────────────
+  const recordMatch = async (finalState: GameState) => {
     if (!roomId) return;
-
-    setGameState(newState);
-
-    await supabase
-      .from("game_states")
-      .update({
-        current_turn: newState.currentTurn,
-        turn_phase: newState.turnPhase,
-        dice_value: newState.diceValue,
-        token_positions: newState as unknown as Json,
-        turn_start_at: new Date().toISOString(),
-      })
-      .eq("room_id", roomId);
-
-    if (newState.turnPhase === "finished" || newState.winner !== null) {
-      await supabase
+    try {
+      const { data: roomData } = await supabase
         .from("game_rooms")
-        .update({ status: "finished" })
-        .eq("id", roomId);
+        .select("code, bet_amount, created_at")
+        .eq("id", roomId)
+        .single();
 
-      // Record match for development purposes
-      try {
-        const { data: roomData } = await supabase
-          .from("game_rooms")
-          .select("code, bet_amount, created_at")
-          .eq("id", roomId)
-          .single();
+      const { data: players } = await supabase
+        .from("room_players")
+        .select("user_id, color_index")
+        .eq("room_id", roomId);
 
-        const { data: players } = await supabase
-          .from("room_players")
-          .select("user_id, color_index")
-          .eq("room_id", roomId);
+      const startedAt = roomData?.created_at || new Date().toISOString();
+      const finishedAt = new Date().toISOString();
+      const durationSeconds = Math.floor(
+        (new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 1000
+      );
 
-        const startedAt = roomData?.created_at || new Date().toISOString();
-        const finishedAt = new Date().toISOString();
-        const durationSeconds = Math.floor(
-          (new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 1000
-        );
+      const winnerUserId = players?.find((_, idx) => idx === finalState.winner)?.user_id || null;
 
-        const winnerUserId = players?.find(
-          (_, idx) => idx === newState.winner
-        )?.user_id || null;
-
-        await supabase.from("match_records").insert({
-          room_id: roomId,
-          room_code: roomData?.code || roomCode,
-          bet_amount: roomData?.bet_amount || betAmount,
-          player_count: newState.playerCount,
-          players: (players || []) as unknown as Json,
-          winner_seat: newState.winner,
-          winner_user_id: winnerUserId,
-          final_state: newState as unknown as Json,
-          move_log: moveLogs as unknown as Json,
-          started_at: startedAt,
-          finished_at: finishedAt,
-          duration_seconds: durationSeconds,
-          finish_reason: (newState.skipCounts || []).some((s) => s >= 5) ? "forfeit" : "normal",
-        });
-      } catch (e) {
-        console.error("Failed to record match:", e);
-      }
+      await supabase.from("match_records").insert({
+        room_id: roomId,
+        room_code: roomData?.code || roomCode,
+        bet_amount: roomData?.bet_amount || betAmount,
+        player_count: finalState.playerCount,
+        players: (players || []) as unknown as Json,
+        winner_seat: finalState.winner,
+        winner_user_id: winnerUserId,
+        final_state: finalState as unknown as Json,
+        move_log: moveLogs as unknown as Json,
+        started_at: startedAt,
+        finished_at: finishedAt,
+        duration_seconds: durationSeconds,
+        finish_reason: (finalState.skipCounts || []).some((s) => s >= 5) ? "forfeit" : "normal",
+      });
+    } catch (e) {
+      console.error("Failed to record match:", e);
     }
   };
 
-  const animateTokenMove = async (
-    baseState: GameState,
-    tokenIndex: number
-  ): Promise<GameState> => {
+  // ── Animation helper (visual only, no DB writes) ──────────────
+  const animateTokenMove = async (baseState: GameState, tokenIndex: number): Promise<void> => {
     const steps = getIntermediateSteps(baseState, tokenIndex);
     animatingRef.current = true;
-
     for (const stepState of steps) {
       setGameState(stepState);
       playTokenMoveSound();
       await new Promise((r) => setTimeout(r, 150));
     }
-
-    const finalState = moveToken(baseState, tokenIndex);
-    // Apply final state BEFORE clearing animation lock to prevent
-    // realtime subscription from overwriting with stale pre-move data
-    setGameState(finalState);
     animatingRef.current = false;
-    return finalState;
   };
 
+  // ── Describe move (for logging) ───────────────────────────────
   const describeMove = (state: GameState, tokenIndex: number, dice: number): string => {
     const token = state.tokens[state.currentTurn][tokenIndex];
     const colorIdx = state.colorOrder?.[state.currentTurn] ?? state.currentTurn;
 
-    // Check if this move would capture an opponent
     const detectCapture = (targetPathIndex: number): string => {
       if (SAFE_POSITIONS.has(targetPathIndex)) return "";
       for (let p = 0; p < state.playerCount; p++) {
@@ -517,18 +387,14 @@ export function useGamePlay(roomId: string | null) {
       if (distToHome > 0 && distToHome < dice) {
         const remaining = dice - distToHome;
         const homeIdx = remaining - 1;
-        if (homeIdx >= 5) {
-          return `rolled ${dice}, ${from} → finished 🏠`;
-        }
+        if (homeIdx >= 5) return `rolled ${dice}, ${from} → finished 🏠`;
         return `rolled ${dice}, ${from} → H${homeIdx}`;
       } else if (distToHome > 0 && distToHome === dice) {
         const capture = detectCapture(homeEntry);
         return `rolled ${dice}, ${from} → ${homeEntry}${capture}`;
       } else if (distToHome === 0) {
         const homeIdx = dice - 1;
-        if (homeIdx >= 5) {
-          return `rolled ${dice}, ${from} → finished 🏠`;
-        }
+        if (homeIdx >= 5) return `rolled ${dice}, ${from} → finished 🏠`;
         return `rolled ${dice}, ${from} → H${homeIdx}`;
       }
       const to = (from + dice) % 52;
@@ -538,14 +404,13 @@ export function useGamePlay(roomId: string | null) {
     if (token.position === "home_column") {
       const from = token.pathIndex;
       const to = Math.min(from + dice, 5);
-      if (to >= 5) {
-        return `rolled ${dice}, H${from} → finished 🏠`;
-      }
+      if (to >= 5) return `rolled ${dice}, H${from} → finished 🏠`;
       return `rolled ${dice}, H${from} → H${to}`;
     }
     return `rolled ${dice}, moved token`;
   };
 
+  // ── Roll dice (server-side) ───────────────────────────────────
   const handleRollDice = async () => {
     if (!gameState || playerIndex === null || isSpectator) return;
     if (gameState.currentTurn !== playerIndex) return;
@@ -553,37 +418,41 @@ export function useGamePlay(roomId: string | null) {
 
     setRolling(true);
     rollingRef.current = true;
+    playDiceRollSound(500);
     await new Promise((r) => setTimeout(r, 600));
 
-    const dice = smartRollDice(gameState, playerIndex);
-    // Reset skip count for this player since they actively played
-    const skipCounts = [...(gameState.skipCounts || Array(gameState.playerCount).fill(0))];
-    skipCounts[playerIndex] = 0;
-    const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving", skipCounts };
-    await saveGameState(diceState);
+    const result = await invokeGameAction("roll");
     setRolling(false);
     rollingRef.current = false;
 
-    const movable = getMovableTokens(diceState);
-    if (movable.length === 0) {
-      addLog(playerIndex, dice, `rolled ${dice}, no moves`, diceState);
+    if (!result) return;
+
+    const dice = result.diceValue;
+
+    if (result.autoMoved && result.movedTokenIndex !== undefined && result.stateBeforeMove) {
+      // Single movable token — animate the auto-move
+      addLog(playerIndex, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
+      setGameState(result.stateBeforeMove);
+      await new Promise((r) => setTimeout(r, 300));
+      await animateTokenMove(result.stateBeforeMove, result.movedTokenIndex);
+      setGameState(result.state);
+    } else if (result.movableTokens.length === 0) {
+      // No moves
+      addLog(playerIndex, dice, `rolled ${dice}, no moves`, gameState);
+      setGameState({ ...gameState, diceValue: dice, turnPhase: "moving" });
       await new Promise((r) => setTimeout(r, 500));
-      const newState: GameState = {
-        ...diceState,
-        currentTurn: (diceState.currentTurn + 1) % diceState.playerCount,
-        turnPhase: "rolling",
-        diceValue: null,
-        consecutiveSixes: 0,
-      };
-      await saveGameState(newState);
-    } else if (movable.length === 1) {
-      addLog(playerIndex, dice, describeMove(diceState, movable[0], dice), diceState);
-      const finalState = await animateTokenMove(diceState, movable[0]);
-      await saveGameState(finalState);
+      setGameState(result.state);
+    } else {
+      // Multiple choices — show dice, wait for token click
+      setGameState(result.state);
     }
-    // If movable.length > 1, wait for user to pick a token
+
+    if (result.state.winner !== null) {
+      await recordMatch(result.state);
+    }
   };
 
+  // ── Move token (server-side) ──────────────────────────────────
   const handleTokenClick = async (tokenIndex: number) => {
     if (!gameState || playerIndex === null || isSpectator) return;
     if (gameState.currentTurn !== playerIndex) return;
@@ -593,65 +462,88 @@ export function useGamePlay(roomId: string | null) {
     if (!movable.includes(tokenIndex)) return;
 
     addLog(playerIndex, gameState.diceValue || 0, describeMove(gameState, tokenIndex, gameState.diceValue || 0), gameState);
-    const finalState = await animateTokenMove(gameState, tokenIndex);
-    await saveGameState(finalState);
-  };
 
-  const playBotTurn = async (state: GameState) => {
-    // Use the passed state directly, not gameState from closure
-    playDiceRollSound(500);
-    await new Promise((r) => setTimeout(r, 600));
-    const dice = smartRollDice(state, state.currentTurn);
-    const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
-    await saveGameState(diceState);
+    const result = await invokeGameAction("move", { tokenIndex });
+    if (!result) return;
 
-    await new Promise((r) => setTimeout(r, 400));
+    await animateTokenMove(gameState, tokenIndex);
+    setGameState(result.state);
 
-    const movable = getMovableTokens(diceState);
-    if (movable.length === 0) {
-      addLog(state.currentTurn, dice, `rolled ${dice}, no moves`, diceState);
-      const newState: GameState = {
-        ...diceState,
-        currentTurn: (diceState.currentTurn + 1) % diceState.playerCount,
-        turnPhase: "rolling",
-        diceValue: null,
-        consecutiveSixes: 0,
-      };
-      await saveGameState(newState);
-    } else {
-      const chosen = pickBestMove(diceState, state.currentTurn);
-      addLog(state.currentTurn, dice, describeMove(diceState, chosen, dice), diceState);
-      const finalState = await animateTokenMove(diceState, chosen);
-      await saveGameState(finalState);
+    if (result.state.winner !== null) {
+      await recordMatch(result.state);
     }
   };
 
+  // ── Bot turn (server-side) ────────────────────────────────────
+  const playBotTurn = async (state: GameState) => {
+    playDiceRollSound(500);
+    await new Promise((r) => setTimeout(r, 600));
+
+    const result = await invokeGameAction("bot-turn");
+    if (!result) return;
+
+    const dice = result.diceValue;
+
+    if (result.movedTokenIndex !== null && result.movedTokenIndex !== undefined && result.stateBeforeMove) {
+      // Bot rolled and moved
+      const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
+      setGameState(diceState);
+      addLog(state.currentTurn, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
+      await new Promise((r) => setTimeout(r, 400));
+      await animateTokenMove(result.stateBeforeMove, result.movedTokenIndex);
+      setGameState(result.state);
+    } else {
+      // Bot rolled, no moves
+      addLog(state.currentTurn, dice, `rolled ${dice}, no moves`, state);
+      const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
+      setGameState(diceState);
+      await new Promise((r) => setTimeout(r, 400));
+      setGameState(result.state);
+    }
+
+    if (result.state.winner !== null) {
+      await recordMatch(result.state);
+    }
+  };
+
+  // ── Auto-skip (server-side) ───────────────────────────────────
+  const handleAutoSkip = async () => {
+    if (!gameState || !roomId) return;
+
+    const result = await invokeGameAction("auto-skip");
+    if (!result) return;
+
+    if (result.forfeit) {
+      addLog(gameState.currentTurn, 0, "auto-forfeited (5 skips)", gameState);
+      toast.error("Player auto-forfeited after 5 missed turns!");
+    } else {
+      const dice = result.diceValue || 0;
+      if (result.movedTokenIndex !== null && result.movedTokenIndex !== undefined && result.stateBeforeMove) {
+        addLog(gameState.currentTurn, dice, `auto: ${describeMove(result.stateBeforeMove, result.movedTokenIndex, dice)}`, result.stateBeforeMove);
+      } else {
+        addLog(gameState.currentTurn, dice, `timed out, auto-rolled ${dice}, no moves`, gameState);
+      }
+    }
+
+    setGameState(result.state);
+
+    if (result.state.winner !== null) {
+      await recordMatch(result.state);
+    }
+  };
+
+  // ── Quit game (server-side) ───────────────────────────────────
   const handleQuitGame = async () => {
     if (!roomId || !user || !gameState) return;
 
-    // Mark the game as finished with opponent as winner
-    if (playerIndex !== null) {
-      const winnerSeat = (playerIndex + 1) % gameState.playerCount;
-      const forfeitState: GameState = {
-        ...gameState,
-        turnPhase: "finished",
-        winner: winnerSeat,
-        diceValue: null,
-      };
-      await saveGameState(forfeitState);
+    const result = await invokeGameAction("quit");
+    if (!result) return;
+
+    setGameState(result.state);
+
+    if (result.state.winner !== null) {
+      await recordMatch(result.state);
     }
-
-    // Update room status to finished
-    await supabase
-      .from("game_rooms")
-      .update({ status: "finished" })
-      .eq("id", roomId);
-
-    await supabase
-      .from("room_players")
-      .delete()
-      .eq("room_id", roomId)
-      .eq("user_id", user.id);
 
     toast.info("You left the game and forfeited your bet.");
   };
