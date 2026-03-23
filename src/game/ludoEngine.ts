@@ -227,10 +227,10 @@ export function getMovableTokens(state: GameState): number[] {
   return movable;
 }
 
-// Generate intermediate states for step-by-step animation (excludes final state)
+// Generate intermediate states for step-by-step animation (ALL steps including each cell)
 export function getIntermediateSteps(state: GameState, tokenIndex: number): GameState[] {
   const { currentTurn, diceValue } = state;
-  if (diceValue === null || diceValue <= 1) return [];
+  if (diceValue === null) return [];
 
   const token = state.tokens[currentTurn][tokenIndex];
   const currentColorIndex = getPlayerColorIndex(state, currentTurn);
@@ -245,23 +245,24 @@ export function getIntermediateSteps(state: GameState, tokenIndex: number): Game
     const homeEntry = HOME_ENTRY_POSITIONS[currentColorIndex];
     const distToHome = ((homeEntry - token.pathIndex + 52) % 52);
 
-    // Steps before entering home column
-    const pathSteps = (distToHome > 0 && distToHome <= diceValue) ? distToHome : diceValue;
-    const actualPathSteps = (distToHome === 0) ? 0 : Math.min(pathSteps, diceValue) - 1;
+    // Generate a step for each cell the token passes through (excluding final destination)
+    const totalSteps = diceValue - 1; // last step is handled by moveToken
 
-    for (let s = 1; s <= actualPathSteps; s++) {
+    for (let s = 1; s <= totalSteps; s++) {
       const stepState = JSON.parse(JSON.stringify(state)) as GameState;
       const stepToken = stepState.tokens[currentTurn][tokenIndex];
 
-      if (distToHome > 0 && distToHome <= diceValue && s >= distToHome) {
-        // Entering home column
+      if (distToHome === 0) {
+        // Already at home entry — move into home column
+        stepToken.position = "home_column";
+        stepToken.pathIndex = s - 1;
+      } else if (distToHome > 0 && distToHome <= diceValue && s >= distToHome) {
+        // Entering home column mid-move
         const homeIdx = s - distToHome;
         stepToken.position = "home_column";
         stepToken.pathIndex = homeIdx;
-      } else if (distToHome === 0) {
-        stepToken.position = "home_column";
-        stepToken.pathIndex = s - 1;
       } else {
+        // Normal path movement
         stepToken.pathIndex = (token.pathIndex + s) % 52;
       }
       steps.push(stepState);
