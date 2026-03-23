@@ -28,7 +28,7 @@ export interface MoveLog {
   timestamp: number;
 }
 
-let logIdCounter = 0;
+let logIdCounter = Date.now();
 
 export function useGamePlay(roomId: string | null) {
   const { user } = useAuth();
@@ -516,13 +516,20 @@ export function useGamePlay(roomId: string | null) {
       const distToHome = ((homeEntry - from + 52) % 52);
       if (distToHome > 0 && distToHome < dice) {
         const remaining = dice - distToHome;
-        return `rolled ${dice}, ${from} → H${remaining - 1}`;
+        const homeIdx = remaining - 1;
+        if (homeIdx >= 5) {
+          return `rolled ${dice}, ${from} → finished 🏠`;
+        }
+        return `rolled ${dice}, ${from} → H${homeIdx}`;
       } else if (distToHome > 0 && distToHome === dice) {
-        // Land exactly on home entry — stay on path
         const capture = detectCapture(homeEntry);
         return `rolled ${dice}, ${from} → ${homeEntry}${capture}`;
       } else if (distToHome === 0) {
-        return `rolled ${dice}, ${from} → H${dice - 1}`;
+        const homeIdx = dice - 1;
+        if (homeIdx >= 5) {
+          return `rolled ${dice}, ${from} → finished 🏠`;
+        }
+        return `rolled ${dice}, ${from} → H${homeIdx}`;
       }
       const to = (from + dice) % 52;
       const capture = detectCapture(to);
