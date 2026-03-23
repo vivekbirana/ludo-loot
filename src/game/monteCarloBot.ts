@@ -12,7 +12,7 @@ import {
   rollDice,
 } from "./ludoEngine";
 
-const SIMULATIONS = 200;
+const SIMULATIONS = 3000;
 const MAX_SIM_TURNS = 200; // cap per simulation to avoid runaway games
 
 /** Deep clone a GameState (much faster than JSON round-trip for small objects) */
