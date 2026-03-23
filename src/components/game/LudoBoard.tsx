@@ -13,7 +13,7 @@ import {
   getMovableTokens,
 } from "@/game/ludoEngine";
 import { cn } from "@/lib/utils";
-import { playTokenMoveSound } from "@/utils/sounds";
+import { playTokenMoveSound, playCaptureSound, playHomeFinishSound } from "@/utils/sounds";
 
 interface LudoBoardProps {
   gameState: GameState;

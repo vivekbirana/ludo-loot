@@ -80,3 +80,55 @@ export function playTokenKillSound() {
   osc.start();
   osc.stop(ctx.currentTime + 0.3);
 }
+
+export function playCaptureSound() {
+  const ctx = getAudioContext();
+
+  // Impact hit
+  const osc1 = ctx.createOscillator();
+  const gain1 = ctx.createGain();
+  osc1.type = "square";
+  osc1.frequency.setValueAtTime(300, ctx.currentTime);
+  osc1.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.15);
+  gain1.gain.setValueAtTime(0.25, ctx.currentTime);
+  gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+  osc1.connect(gain1);
+  gain1.connect(ctx.destination);
+  osc1.start();
+  osc1.stop(ctx.currentTime + 0.2);
+
+  // Crunch noise
+  const bufferSize = ctx.sampleRate * 0.15;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    const t = i / bufferSize;
+    data[i] = (Math.random() * 2 - 1) * 0.3 * Math.pow(1 - t, 2);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  src.connect(ctx.destination);
+  src.start(ctx.currentTime + 0.05);
+}
+
+export function playHomeFinishSound() {
+  const ctx = getAudioContext();
+  const t = ctx.currentTime;
+
+  // Ascending chime sequence
+  const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
+  notes.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    const start = t + i * 0.1;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.15, start + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + 0.25);
+  });
+}
