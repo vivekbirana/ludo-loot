@@ -1,4 +1,4 @@
-import { Gamepad2, Trophy, TrendingUp, ArrowUpRight, ArrowDownLeft, LogOut } from "lucide-react";
+import { Gamepad2, Trophy, TrendingUp, ArrowUpRight, ArrowDownLeft, LogOut, Plus, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CoinBalance from "@/components/CoinBalance";
 import StatCard from "@/components/StatCard";
