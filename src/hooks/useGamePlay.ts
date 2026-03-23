@@ -374,7 +374,7 @@ export function useGamePlay(roomId: string | null) {
       // Single movable token — animate the auto-move
       addLog(playerIndex, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
       setGameState(result.stateBeforeMove);
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 150));
       await animateTokenMove(result.stateBeforeMove, result.movedTokenIndex);
       setGameState(result.state);
     } else if (result.movableTokens.length === 0) {
