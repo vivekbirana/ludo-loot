@@ -399,7 +399,7 @@ Deno.serve(async (req) => {
         const skipCounts = [...(state.skipCounts || Array(state.playerCount).fill(0))];
         skipCounts[callerSeatIdx] = 0;
 
-        const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving", skipCounts };
+        const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving", skipCounts, lastDiceValue: dice, lastDicePlayer: callerSeatIdx };
         const movable = getMovableTokens(diceState);
 
         if (movable.length === 0) {
