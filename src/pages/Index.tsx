@@ -24,6 +24,50 @@ const Index = () => {
     enabled: !!user,
   });
 
+  const { data: stats } = useQuery({
+    queryKey: ["player-stats", user?.id],
+    queryFn: async () => {
+      const { data: playerRooms } = await supabase
+        .from("room_players")
+        .select("room_id")
+        .eq("user_id", user!.id);
+
+      if (!playerRooms || playerRooms.length === 0) return { played: 0, won: 0, winRate: "0%", streak: 0 };
+
+      const roomIds = playerRooms.map((r) => r.room_id);
+      const { data: finishedRooms } = await supabase
+        .from("game_rooms")
+        .select("id")
+        .in("id", roomIds)
+        .eq("status", "finished");
+
+      const played = finishedRooms?.length || 0;
+      if (played === 0) return { played: 0, won: 0, winRate: "0%", streak: 0 };
+
+      const finishedIds = finishedRooms!.map((r) => r.id);
+      const { data: gameStates } = await supabase
+        .from("game_states")
+        .select("room_id, token_positions")
+        .in("room_id", finishedIds);
+
+      let won = 0;
+      for (const gs of gameStates || []) {
+        const tp = gs.token_positions as any;
+        if (tp?.winner === null || tp?.winner === undefined) continue;
+        const { data: roomPlayers } = await supabase
+          .from("room_players")
+          .select("user_id")
+          .eq("room_id", gs.room_id)
+          .order("joined_at", { ascending: true });
+        if (roomPlayers && roomPlayers[tp.winner]?.user_id === user!.id) won++;
+      }
+
+      const winRate = played > 0 ? `${Math.round((won / played) * 100)}%` : "0%";
+      return { played, won, winRate, streak: 0 };
+    },
+    enabled: !!user,
+  });
+
   return (
     <div className="px-4 pt-6 space-y-6">
       {/* Header */}
@@ -60,10 +104,10 @@ const Index = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard icon={Gamepad2} label="Games" value={0} />
-        <StatCard icon={Trophy} label="Wins" value={0} />
-        <StatCard icon={TrendingUp} label="Win Rate" value="0%" />
-        <StatCard icon={Flame} label="Streak" value={0} />
+        <StatCard icon={Gamepad2} label="Games" value={stats?.played ?? 0} />
+        <StatCard icon={Trophy} label="Wins" value={stats?.won ?? 0} />
+        <StatCard icon={TrendingUp} label="Win Rate" value={stats?.winRate ?? "0%"} />
+        <StatCard icon={Flame} label="Streak" value={stats?.streak ?? 0} />
       </div>
 
       {/* Quick Actions */}
