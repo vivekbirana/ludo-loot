@@ -263,8 +263,8 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                       opacity={0.35}
                     />
                   )}
-                  {/* Rotating dotted circle for current turn tokens in home */}
-                  {isHome && isCurrentTurn && (
+                  {/* Rotating dotted circle for current turn pieces */}
+                  {isCurrentTurn && !isFinished && (
                     <circle
                       cx={0}
                       cy={0}
@@ -285,7 +285,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                       />
                     </circle>
                   )}
-                  {/* Glow for movable tokens */}
+                  {/* Glow + pulse for movable tokens */}
                   {isMovable && (
                     <circle
                       cx={0}
