@@ -250,7 +250,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                   style={{
                     cursor: isMovable ? "pointer" : "default",
                     transform: `translate(${finalX}px, ${finalY}px)`,
-                    transition: "transform 0.12s linear",
+                    transition: "transform 0.2s ease-out",
                   }}
                 >
                   {/* Home yard colored base circle */}
