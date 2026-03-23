@@ -249,13 +249,20 @@ export function useGamePlay(roomId: string | null) {
     const currentName = names[gameState.currentTurn];
     if (currentName === "Bot") {
       botPlayingRef.current = true;
-      const capturedState = { ...gameState };
       const timer = setTimeout(() => {
-        playBotTurn(capturedState).finally(() => {
+        const latestState = gameStateRef.current;
+        if (!latestState) {
+          botPlayingRef.current = false;
+          return;
+        }
+        playBotTurn(latestState).finally(() => {
           botPlayingRef.current = false;
         });
-      }, 1000);
-      return () => { clearTimeout(timer); botPlayingRef.current = false; };
+      }, 180);
+      return () => {
+        clearTimeout(timer);
+        botPlayingRef.current = false;
+      };
     }
   }, [gameState?.currentTurn, gameState?.turnPhase, gameState?.diceValue]);
 
@@ -285,12 +292,18 @@ export function useGamePlay(roomId: string | null) {
   // ── Animation helper (visual only, no DB writes) ──────────────
   const animateTokenMove = async (baseState: GameState, tokenIndex: number): Promise<void> => {
     const steps = getIntermediateSteps(baseState, tokenIndex);
+    if (steps.length === 0) return;
+
     animatingRef.current = true;
-    for (const stepState of steps) {
-      setGameState(stepState);
-      playTokenMoveSound();
-      await new Promise((r) => setTimeout(r, 220));
+    playTokenMoveSound();
+
+    for (let i = 0; i < steps.length; i++) {
+      setGameState(steps[i]);
+      if (i < steps.length - 1) {
+        await new Promise((r) => setTimeout(r, 120));
+      }
     }
+
     animatingRef.current = false;
   };
 
@@ -356,10 +369,17 @@ export function useGamePlay(roomId: string | null) {
 
     setRolling(true);
     rollingRef.current = true;
-    playDiceRollSound(500);
-    await new Promise((r) => setTimeout(r, 600));
+    playDiceRollSound(260);
 
+    const startedAt = performance.now();
     const result = await invokeGameAction("roll");
+    const elapsed = performance.now() - startedAt;
+    const minRollAnimMs = 220;
+
+    if (elapsed < minRollAnimMs) {
+      await new Promise((r) => setTimeout(r, minRollAnimMs - elapsed));
+    }
+
     setRolling(false);
     rollingRef.current = false;
 
@@ -371,14 +391,14 @@ export function useGamePlay(roomId: string | null) {
       // Single movable token — animate the auto-move
       addLog(playerIndex, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
       setGameState(result.stateBeforeMove);
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 120));
       await animateTokenMove(result.stateBeforeMove, result.movedTokenIndex);
       setGameState(result.state);
     } else if (result.movableTokens.length === 0) {
       // No moves
       addLog(playerIndex, dice, `rolled ${dice}, no moves`, gameState);
       setGameState({ ...gameState, diceValue: dice, turnPhase: "moving" });
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 180));
       setGameState(result.state);
     } else {
       // Multiple choices — show dice, wait for token click
@@ -411,28 +431,35 @@ export function useGamePlay(roomId: string | null) {
 
   // ── Bot turn (server-side) ────────────────────────────────────
   const playBotTurn = async (state: GameState) => {
-    playDiceRollSound(500);
-    await new Promise((r) => setTimeout(r, 600));
+    playDiceRollSound(240);
 
+    const startedAt = performance.now();
     const result = await invokeGameAction("bot-turn");
     if (!result) return;
 
+    const elapsed = performance.now() - startedAt;
+    const minBotDelayMs = 180;
+    if (elapsed < minBotDelayMs) {
+      await new Promise((r) => setTimeout(r, minBotDelayMs - elapsed));
+    }
+
     const dice = result.diceValue;
+    const botSeat = result.stateBeforeMove?.currentTurn ?? state.currentTurn;
 
     if (result.movedTokenIndex !== null && result.movedTokenIndex !== undefined && result.stateBeforeMove) {
       // Bot rolled and moved
-      const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
+      const diceState: GameState = { ...result.stateBeforeMove, diceValue: dice, turnPhase: "moving" };
       setGameState(diceState);
-      addLog(state.currentTurn, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
-      await new Promise((r) => setTimeout(r, 400));
+      addLog(botSeat, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
+      await new Promise((r) => setTimeout(r, 120));
       await animateTokenMove(result.stateBeforeMove, result.movedTokenIndex);
       setGameState(result.state);
     } else {
       // Bot rolled, no moves
-      addLog(state.currentTurn, dice, `rolled ${dice}, no moves`, state);
+      addLog(botSeat, dice, `rolled ${dice}, no moves`, state);
       const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
       setGameState(diceState);
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 120));
       setGameState(result.state);
     }
 
