@@ -181,9 +181,9 @@ const Profile = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <StatCard icon={Gamepad2} label="Played" value={0} />
-        <StatCard icon={Trophy} label="Won" value={0} />
-        <StatCard icon={TrendingUp} label="Rate" value="0%" />
+        <StatCard icon={Gamepad2} label="Played" value={stats?.played ?? 0} />
+        <StatCard icon={Trophy} label="Won" value={stats?.won ?? 0} />
+        <StatCard icon={TrendingUp} label="Rate" value={stats?.winRate ?? "0%"} />
       </div>
 
       {/* Transactions */}
