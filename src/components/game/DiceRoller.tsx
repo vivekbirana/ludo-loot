@@ -13,7 +13,7 @@ interface DiceRollerProps {
   turnColor?: string;
 }
 
-const DiceRoller = ({ value, onRoll, canRoll, rolling, turnColor }: DiceRollerProps) => {
+const DiceRoller = memo(({ value, onRoll, canRoll, rolling, turnColor }: DiceRollerProps) => {
   const [animFace, setAnimFace] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
