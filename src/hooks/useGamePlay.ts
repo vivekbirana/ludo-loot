@@ -420,6 +420,48 @@ export function useGamePlay(roomId: string | null) {
         .from("game_rooms")
         .update({ status: "finished" })
         .eq("id", roomId);
+
+      // Record match for development purposes
+      try {
+        const { data: roomData } = await supabase
+          .from("game_rooms")
+          .select("code, bet_amount, created_at")
+          .eq("id", roomId)
+          .single();
+
+        const { data: players } = await supabase
+          .from("room_players")
+          .select("user_id, color_index")
+          .eq("room_id", roomId);
+
+        const startedAt = roomData?.created_at || new Date().toISOString();
+        const finishedAt = new Date().toISOString();
+        const durationSeconds = Math.floor(
+          (new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 1000
+        );
+
+        const winnerUserId = players?.find(
+          (_, idx) => idx === newState.winner
+        )?.user_id || null;
+
+        await supabase.from("match_records").insert({
+          room_id: roomId,
+          room_code: roomData?.code || roomCode,
+          bet_amount: roomData?.bet_amount || betAmount,
+          player_count: newState.playerCount,
+          players: (players || []) as unknown as Json,
+          winner_seat: newState.winner,
+          winner_user_id: winnerUserId,
+          final_state: newState as unknown as Json,
+          move_log: moveLogs as unknown as Json,
+          started_at: startedAt,
+          finished_at: finishedAt,
+          duration_seconds: durationSeconds,
+          finish_reason: (newState.skipCounts || []).some((s) => s >= 5) ? "forfeit" : "normal",
+        });
+      } catch (e) {
+        console.error("Failed to record match:", e);
+      }
     }
   };
 
