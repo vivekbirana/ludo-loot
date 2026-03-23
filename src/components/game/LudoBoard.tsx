@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, memo } from "react";
 import {
   BOARD_SIZE,
   MAIN_PATH,
@@ -13,7 +13,6 @@ import {
   getMovableTokens,
 } from "@/game/ludoEngine";
 import { cn } from "@/lib/utils";
-import { playTokenMoveSound } from "@/utils/sounds";
 
 interface LudoBoardProps {
   gameState: GameState;
