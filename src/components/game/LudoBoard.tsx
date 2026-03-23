@@ -81,17 +81,15 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
               />
               {Array.from({ length: 6 }, (_, row) =>
                 Array.from({ length: 6 }, (_, col) => (
-                  <g key={`grid-${idx}-${row}-${col}`}>
-                    <rect
-                      x={(origin.col + col) * cellSize}
-                      y={(origin.row + row) * cellSize}
-                      width={cellSize}
-                      height={cellSize}
-                      fill={isBorder(row, col) ? PLAYER_COLORS[idx] : "white"}
-                      stroke="rgba(0,0,0,0.15)"
-                      strokeWidth="0.5"
-                    />
-                  </g>
+                  <rect
+                    key={`grid-${idx}-${row}-${col}`}
+                    x={(origin.col + col) * cellSize}
+                    y={(origin.row + row) * cellSize}
+                    width={cellSize}
+                    height={cellSize}
+                    fill={isBorder(row, col) ? PLAYER_COLORS[idx] : "white"}
+                    stroke="none"
+                  />
                 ))
               )}
             </g>
