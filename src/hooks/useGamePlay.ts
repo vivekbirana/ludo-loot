@@ -420,6 +420,7 @@ export function useGamePlay(roomId: string | null) {
     if (gameState.turnPhase !== "rolling") return;
 
     setRolling(true);
+    rollingRef.current = true;
     await new Promise((r) => setTimeout(r, 600));
 
     const dice = smartRollDice(gameState, playerIndex);
