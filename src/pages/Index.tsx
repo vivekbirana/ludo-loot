@@ -104,10 +104,10 @@ const Index = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard icon={Gamepad2} label="Games" value={0} />
-        <StatCard icon={Trophy} label="Wins" value={0} />
-        <StatCard icon={TrendingUp} label="Win Rate" value="0%" />
-        <StatCard icon={Flame} label="Streak" value={0} />
+        <StatCard icon={Gamepad2} label="Games" value={stats?.played ?? 0} />
+        <StatCard icon={Trophy} label="Wins" value={stats?.won ?? 0} />
+        <StatCard icon={TrendingUp} label="Win Rate" value={stats?.winRate ?? "0%"} />
+        <StatCard icon={Flame} label="Streak" value={stats?.streak ?? 0} />
       </div>
 
       {/* Quick Actions */}
