@@ -14,6 +14,7 @@ import { smartRollDice } from "@/game/smartDice";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 import { playDiceRollSound, playTokenMoveSound } from "@/utils/sounds";
+import { pickBestMove } from "@/game/monteCarloBot";
 
 export interface MoveLog {
   id: number;
