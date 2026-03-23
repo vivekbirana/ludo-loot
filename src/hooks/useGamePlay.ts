@@ -405,9 +405,7 @@ export function useGamePlay(roomId: string | null) {
     await animateTokenMove(gameState, tokenIndex);
     setGameState(result.state);
 
-    if (result.state.winner !== null) {
-      await recordMatch(result.state);
-    }
+    // Prize distribution and match recording handled server-side
   };
 
   // ── Bot turn (server-side) ────────────────────────────────────
