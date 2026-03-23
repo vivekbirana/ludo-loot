@@ -484,7 +484,7 @@ export function useGamePlay(roomId: string | null) {
       };
       await saveGameState(newState);
     } else {
-      const chosen = movable[Math.floor(Math.random() * movable.length)];
+      const chosen = pickBestMove(diceState, state.currentTurn);
       addLog(state.currentTurn, dice, describeMove(diceState, chosen, dice), diceState);
       const finalState = await animateTokenMove(diceState, chosen);
       await saveGameState(finalState);
