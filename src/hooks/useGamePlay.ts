@@ -28,7 +28,7 @@ export interface MoveLog {
   timestamp: number;
 }
 
-let logIdCounter = 0;
+let logIdCounter = Date.now();
 
 export function useGamePlay(roomId: string | null) {
   const { user } = useAuth();
