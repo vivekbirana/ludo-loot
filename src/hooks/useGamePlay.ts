@@ -14,6 +14,7 @@ import { smartRollDice } from "@/game/smartDice";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 import { playDiceRollSound, playTokenMoveSound } from "@/utils/sounds";
+import { pickBestMove } from "@/game/monteCarloBot";
 
 export interface MoveLog {
   id: number;
@@ -483,7 +484,7 @@ export function useGamePlay(roomId: string | null) {
       };
       await saveGameState(newState);
     } else {
-      const chosen = movable[Math.floor(Math.random() * movable.length)];
+      const chosen = pickBestMove(diceState, state.currentTurn);
       addLog(state.currentTurn, dice, describeMove(diceState, chosen, dice), diceState);
       const finalState = await animateTokenMove(diceState, chosen);
       await saveGameState(finalState);
