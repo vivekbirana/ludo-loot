@@ -346,21 +346,56 @@ export function useGamePlay(roomId: string | null) {
       addLog(gameState.currentTurn, 0, "auto-forfeited (5 skips)", gameState);
       toast.error("Player auto-forfeited after 5 missed turns!");
       await saveGameState(forfeitState);
-      // Also mark room as finished
       await supabase.from("game_rooms").update({ status: "finished" }).eq("id", roomId);
       return;
     }
 
-    const newState: GameState = {
-      ...gameState,
-      currentTurn: (gameState.currentTurn + 1) % gameState.playerCount,
-      turnPhase: "rolling",
-      diceValue: null,
-      consecutiveSixes: 0,
-      skipCounts,
-    };
+    // Auto-play: roll dice and make a move if possible
+    if (gameState.turnPhase === "rolling") {
+      const dice = smartRollDice(gameState, gameState.currentTurn);
+      const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving", skipCounts };
+      await saveGameState(diceState);
 
-    await saveGameState(newState);
+      await new Promise((r) => setTimeout(r, 300));
+
+      const movable = getMovableTokens(diceState);
+      if (movable.length === 0) {
+        addLog(gameState.currentTurn, dice, `auto-rolled ${dice}, no moves`, diceState);
+        const newState: GameState = {
+          ...diceState,
+          currentTurn: (diceState.currentTurn + 1) % diceState.playerCount,
+          turnPhase: "rolling",
+          diceValue: null,
+          consecutiveSixes: 0,
+        };
+        await saveGameState(newState);
+      } else {
+        // Pick the first movable token (simple auto-move)
+        const chosen = movable[0];
+        addLog(gameState.currentTurn, dice, `auto: ${describeMove(diceState, chosen, dice)}`, diceState);
+        const finalState = await animateTokenMove(diceState, chosen);
+        await saveGameState(finalState);
+      }
+    } else if (gameState.turnPhase === "moving") {
+      // Player rolled but didn't pick a token — auto-pick first movable
+      const movable = getMovableTokens(gameState);
+      if (movable.length > 0) {
+        const chosen = movable[0];
+        addLog(gameState.currentTurn, gameState.diceValue || 0, `auto: ${describeMove(gameState, chosen, gameState.diceValue || 0)}`, gameState);
+        const finalState = await animateTokenMove(gameState, chosen);
+        await saveGameState(finalState);
+      } else {
+        const newState: GameState = {
+          ...gameState,
+          currentTurn: (gameState.currentTurn + 1) % gameState.playerCount,
+          turnPhase: "rolling",
+          diceValue: null,
+          consecutiveSixes: 0,
+          skipCounts,
+        };
+        await saveGameState(newState);
+      }
+    }
   };
 
   const saveGameState = async (newState: GameState) => {
