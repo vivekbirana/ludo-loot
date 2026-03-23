@@ -446,9 +446,26 @@ export function useGamePlay(roomId: string | null) {
   const describeMove = (state: GameState, tokenIndex: number, dice: number): string => {
     const token = state.tokens[state.currentTurn][tokenIndex];
     const colorIdx = state.colorOrder?.[state.currentTurn] ?? state.currentTurn;
+
+    // Check if this move would capture an opponent
+    const detectCapture = (targetPathIndex: number): string => {
+      if (SAFE_POSITIONS.has(targetPathIndex)) return "";
+      for (let p = 0; p < state.playerCount; p++) {
+        if (p === state.currentTurn) continue;
+        const oppColor = state.colorOrder?.[p] ?? p;
+        for (const oToken of state.tokens[p]) {
+          if (oToken.position === "path" && oToken.pathIndex === targetPathIndex) {
+            return ` 💥 captured ${PLAYER_NAMES[oppColor]}!`;
+          }
+        }
+      }
+      return "";
+    };
+
     if (token.position === "home" && dice === 6) {
       const startPos = START_POSITIONS[colorIdx];
-      return `rolled ${dice}, moved out → ${startPos}`;
+      const capture = detectCapture(startPos);
+      return `rolled ${dice}, moved out → ${startPos}${capture}`;
     }
     if (token.position === "path") {
       const from = token.pathIndex;
@@ -464,13 +481,14 @@ export function useGamePlay(roomId: string | null) {
         return `rolled ${dice}, ${from} → H${dice - 1}`;
       }
       const to = (from + dice) % 52;
-      return `rolled ${dice}, ${from} → ${to}`;
+      const capture = detectCapture(to);
+      return `rolled ${dice}, ${from} → ${to}${capture}`;
     }
     if (token.position === "home_column") {
       const from = token.pathIndex;
       const to = Math.min(from + dice, 5);
       if (to >= 5) {
-        return `rolled ${dice}, H${from} → finished`;
+        return `rolled ${dice}, H${from} → finished 🏠`;
       }
       return `rolled ${dice}, H${from} → H${to}`;
     }
