@@ -162,6 +162,18 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                 stroke="black"
                 strokeWidth="0.5"
               />
+              <text
+                x={cell.col * cellSize + cellSize / 2}
+                y={cell.row * cellSize + cellSize / 2}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={cellSize * 0.35}
+                fill="rgba(0,0,0,0.4)"
+                fontWeight="bold"
+                style={{ transform: `rotate(${-rotation}deg)`, transformOrigin: `${cell.col * cellSize + cellSize / 2}px ${cell.row * cellSize + cellSize / 2}px` }}
+              >
+                H{cellIdx}
+              </text>
             </g>
           ))
         )}
