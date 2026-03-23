@@ -69,11 +69,6 @@ Deno.serve(async (req) => {
     }
     const userId = authUser.id;
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     const { roomId } = await req.json();
     if (!roomId) {
       return new Response(JSON.stringify({ error: "roomId required" }), {
