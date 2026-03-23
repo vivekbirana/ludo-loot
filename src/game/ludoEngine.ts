@@ -85,8 +85,8 @@ export const MAIN_PATH: { row: number; col: number }[] = [
   { row: 6, col: 13 }, // 35
   { row: 6, col: 14 }, // 36
   // Right connecting cells (cells 37-38)
-  { row: 7, col: 14 }, // 37
-  { row: 8, col: 14 }, // 38
+  { row: 8, col: 14 }, // 37
+  { row: 7, col: 14 }, // 38 — Yellow home entry
   // Yellow start — right arm, row 8, going left (cells 39-43)
   { row: 8, col: 13 }, // 39 — Yellow start/safe
   { row: 8, col: 12 }, // 40
