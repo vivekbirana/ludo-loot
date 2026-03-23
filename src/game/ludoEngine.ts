@@ -53,8 +53,8 @@ export const MAIN_PATH: { row: number; col: number }[] = [
   { row: 8, col: 1 },  // 9
   { row: 8, col: 0 },  // 10
   // Left connecting cells (cells 11-12)
-  { row: 7, col: 0 },  // 11
-  { row: 6, col: 0 },  // 12
+  { row: 6, col: 0 },  // 11
+  { row: 7, col: 0 },  // 12 — Red home entry
   // Red start — left arm, row 6, going right (cells 13-17)
   { row: 6, col: 1 },  // 13 — Red start/safe
   { row: 6, col: 2 },  // 14
