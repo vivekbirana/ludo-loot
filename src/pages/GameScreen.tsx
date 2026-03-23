@@ -190,18 +190,26 @@ const GameScreen = () => {
             </Button>
           </div>
         ) : !isSpectator ? (
-          <DiceRoller
-            value={gameState.diceValue}
-            onRoll={handleRollDice}
-            canRoll={isMyTurn && gameState.turnPhase === "rolling"}
-            rolling={rolling}
-            turnColor={currentTurnColor}
-          />
+          <div className="flex flex-col items-center gap-1">
+            <DiceRoller
+              value={gameState.diceValue}
+              onRoll={handleRollDice}
+              canRoll={isMyTurn && gameState.turnPhase === "rolling"}
+              rolling={rolling}
+              turnColor={currentTurnColor}
+            />
+            {!isMyTurn && gameState.lastDiceValue != null && gameState.lastDicePlayer != null && (
+              <p className="text-xs text-muted-foreground font-heading mt-1">
+                {playerNames[gameState.lastDicePlayer] || PLAYER_NAMES[getSeatColorIndex(gameState.lastDicePlayer)]} rolled{" "}
+                <span className="font-bold text-foreground">{gameState.lastDiceValue}</span>
+              </p>
+            )}
+          </div>
         ) : (
           <div className="text-center text-sm text-muted-foreground">
             <p>Watching the game...</p>
-            {gameState.diceValue && (
-              <p className="text-lg font-heading font-bold mt-1">Dice: {gameState.diceValue}</p>
+            {gameState.lastDiceValue != null && (
+              <p className="text-lg font-heading font-bold mt-1">Dice: {gameState.lastDiceValue}</p>
             )}
           </div>
         )}
