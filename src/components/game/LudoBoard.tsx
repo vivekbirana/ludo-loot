@@ -309,8 +309,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                     cy={0}
                     r={tokenRadius}
                     fill={color}
-                    stroke="#000"
-                    strokeWidth={isMovable ? 2 : 1.2}
+                    stroke="none"
                     opacity={isCurrentTurn || isFinished ? 1 : 0.7}
                   />
                   {/* Token inner */}
