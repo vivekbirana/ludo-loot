@@ -475,7 +475,7 @@ Deno.serve(async (req) => {
         }
 
         const dice = serverRollDice(state);
-        const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
+        const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving", lastDiceValue: dice, lastDicePlayer: state.currentTurn };
         const movable = getMovableTokens(diceState);
 
         if (movable.length === 0) {
