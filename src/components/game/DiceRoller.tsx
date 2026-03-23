@@ -73,6 +73,7 @@ const DiceRoller = memo(({ value, onRoll, canRoll, rolling, turnColor }: DiceRol
       )}
     </div>
   );
-};
+});
 
+DiceRoller.displayName = "DiceRoller";
 export default DiceRoller;

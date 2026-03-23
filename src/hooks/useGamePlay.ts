@@ -289,7 +289,7 @@ export function useGamePlay(roomId: string | null) {
     for (const stepState of steps) {
       setGameState(stepState);
       playTokenMoveSound();
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 220));
     }
     animatingRef.current = false;
   };
