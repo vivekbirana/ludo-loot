@@ -20,9 +20,12 @@ interface LudoBoardProps {
   currentPlayerId: number | null;
   onTokenClick: (tokenIndex: number) => void;
   isSpectator?: boolean;
+  myColorIndex?: number;
 }
 
-const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: LudoBoardProps) => {
+const ROTATION_BY_COLOR: Record<number, number> = { 0: 270, 1: 180, 2: 90, 3: 0 };
+
+const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myColorIndex }: LudoBoardProps) => {
   const boardWidth = 363;
   const cellSize = boardWidth / BOARD_SIZE;
   const prevTokensRef = useRef<string>("");
@@ -49,6 +52,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
   }, [gameState, currentPlayerId, isSpectator]);
 
   const getSeatColorIndex = (seat: number) => gameState.colorOrder?.[seat] ?? seat;
+  const rotation = myColorIndex !== undefined ? (ROTATION_BY_COLOR[myColorIndex] ?? 0) : 0;
 
   return (
     <div className="relative mx-auto" style={{ width: boardWidth, height: boardWidth }}>
@@ -57,6 +61,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: Lu
         width={boardWidth}
         height={boardWidth}
         className="rounded-xl"
+        style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}
       >
         {/* Background */}
         <rect width={boardWidth} height={boardWidth} fill="hsl(40, 30%, 95%)" rx="12" />
