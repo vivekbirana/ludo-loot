@@ -14,6 +14,8 @@ import History from "./pages/History";
 import Ranking from "./pages/Ranking";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminResetPassword from "./pages/admin/AdminResetPassword";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminRooms from "./pages/admin/AdminRooms";
@@ -46,6 +48,8 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/reset-password" element={<AdminResetPassword />} />
             
             {/* Game screen - no bottom nav */}
             <Route path="/game/:roomId" element={<ProtectedRoute><GameScreen /></ProtectedRoute>} />
@@ -60,8 +64,8 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
             </Route>
 
-            {/* Admin routes - protected */}
-            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+            {/* Admin routes - role-checked inside AdminLayout */}
+            <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="rooms" element={<AdminRooms />} />
