@@ -426,7 +426,7 @@ export function useGamePlay(roomId: string | null) {
       const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
       setGameState(diceState);
       addLog(state.currentTurn, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 200));
       await animateTokenMove(result.stateBeforeMove, result.movedTokenIndex);
       setGameState(result.state);
     } else {
