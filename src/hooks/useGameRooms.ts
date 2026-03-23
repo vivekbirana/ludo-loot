@@ -130,6 +130,17 @@ export function useGameRooms() {
       return;
     }
 
+    // Deduct bet upfront
+    const { error: deductError } = await supabase.functions.invoke("deduct-bet", {
+      body: { action: "deduct", bet_amount: betAmount },
+    });
+
+    if (deductError) {
+      toast.error("Failed to deduct bet");
+      console.error(deductError);
+      return;
+    }
+
     const code = generateRoomCode();
 
     const { data: room, error } = await supabase
@@ -139,6 +150,10 @@ export function useGameRooms() {
       .single();
 
     if (error) {
+      // Refund if room creation fails
+      await supabase.functions.invoke("deduct-bet", {
+        body: { action: "refund", room_id: room?.id },
+      });
       toast.error("Failed to create room");
       console.error(error);
       return;
@@ -155,7 +170,7 @@ export function useGameRooms() {
       return;
     }
 
-    toast.success(`Room #${code} created!`);
+    toast.success(`Room #${code} created! ₹${betAmount} deducted.`);
     return room;
   };
 
@@ -175,15 +190,14 @@ export function useGameRooms() {
       return;
     }
 
-    // Check wallet balance
-    const { data: wallet } = await supabase
-      .from("wallets")
-      .select("balance")
-      .eq("user_id", user.id)
-      .single();
+    // Deduct bet upfront
+    const { error: deductError } = await supabase.functions.invoke("deduct-bet", {
+      body: { action: "deduct", bet_amount: room.bet_amount },
+    });
 
-    if (!wallet || wallet.balance < room.bet_amount) {
-      toast.error("Insufficient balance");
+    if (deductError) {
+      toast.error("Failed to deduct bet");
+      console.error(deductError);
       return;
     }
 
@@ -192,12 +206,16 @@ export function useGameRooms() {
       .insert({ room_id: roomId, user_id: user.id });
 
     if (error) {
+      // Refund if join fails
+      await supabase.functions.invoke("deduct-bet", {
+        body: { action: "refund", room_id: roomId },
+      });
       toast.error("Failed to join room");
       console.error(error);
       return;
     }
 
-    toast.success(`Joined room #${room.code}!`);
+    toast.success(`Joined room #${room.code}! ₹${room.bet_amount} deducted.`);
   };
 
   const joinByCode = async (code: string) => {
@@ -255,6 +273,13 @@ export function useGameRooms() {
   const leaveRoom = async () => {
     if (!user || !currentRoom) return;
 
+    // Refund bet if room is still waiting
+    if (currentRoom.status === "waiting") {
+      await supabase.functions.invoke("deduct-bet", {
+        body: { action: "refund", room_id: currentRoom.id },
+      });
+    }
+
     const { error } = await supabase
       .from("room_players")
       .delete()
@@ -276,7 +301,7 @@ export function useGameRooms() {
     }
 
     setCurrentRoom(null);
-    toast.success("Left the room");
+    toast.success("Left the room — bet refunded");
   };
 
   const startGame = async () => {
