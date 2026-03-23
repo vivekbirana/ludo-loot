@@ -273,6 +273,13 @@ export function useGameRooms() {
   const leaveRoom = async () => {
     if (!user || !currentRoom) return;
 
+    // Refund bet if room is still waiting
+    if (currentRoom.status === "waiting") {
+      await supabase.functions.invoke("deduct-bet", {
+        body: { action: "refund", room_id: currentRoom.id },
+      });
+    }
+
     const { error } = await supabase
       .from("room_players")
       .delete()
@@ -294,7 +301,7 @@ export function useGameRooms() {
     }
 
     setCurrentRoom(null);
-    toast.success("Left the room");
+    toast.success("Left the room — bet refunded");
   };
 
   const startGame = async () => {
