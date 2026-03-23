@@ -209,6 +209,7 @@ export type Database = {
         Row: {
           color_index: number | null
           id: string
+          is_bot: boolean
           is_ready: boolean
           joined_at: string
           room_id: string
@@ -217,6 +218,7 @@ export type Database = {
         Insert: {
           color_index?: number | null
           id?: string
+          is_bot?: boolean
           is_ready?: boolean
           joined_at?: string
           room_id: string
@@ -225,6 +227,7 @@ export type Database = {
         Update: {
           color_index?: number | null
           id?: string
+          is_bot?: boolean
           is_ready?: boolean
           joined_at?: string
           room_id?: string
