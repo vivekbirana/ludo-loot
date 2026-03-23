@@ -1,4 +1,4 @@
-import { useMemo, memo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import {
   BOARD_SIZE,
   MAIN_PATH,
@@ -13,6 +13,7 @@ import {
   getMovableTokens,
 } from "@/game/ludoEngine";
 import { cn } from "@/lib/utils";
+import { playTokenMoveSound } from "@/utils/sounds";
 
 interface LudoBoardProps {
   gameState: GameState;
@@ -24,10 +25,19 @@ interface LudoBoardProps {
 
 const ROTATION_BY_COLOR: Record<number, number> = { 0: 270, 1: 180, 2: 90, 3: 0 };
 
-const LudoBoard = memo(({ gameState, currentPlayerId, onTokenClick, isSpectator, myColorIndex }: LudoBoardProps) => {
+const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myColorIndex }: LudoBoardProps) => {
   const boardWidth = 363;
   const cellSize = boardWidth / BOARD_SIZE;
-  // Sound is handled by useGamePlay animation — no duplicate here
+  const prevTokensRef = useRef<string>("");
+
+  // Play sound on token position changes
+  useEffect(() => {
+    const key = JSON.stringify(gameState.tokens);
+    if (prevTokensRef.current && prevTokensRef.current !== key) {
+      playTokenMoveSound();
+    }
+    prevTokensRef.current = key;
+  }, [gameState.tokens]);
 
   const movableTokens = useMemo(() => {
     if (
@@ -71,15 +81,17 @@ const LudoBoard = memo(({ gameState, currentPlayerId, onTokenClick, isSpectator,
               />
               {Array.from({ length: 6 }, (_, row) =>
                 Array.from({ length: 6 }, (_, col) => (
-                  <rect
-                    key={`grid-${idx}-${row}-${col}`}
-                    x={(origin.col + col) * cellSize}
-                    y={(origin.row + row) * cellSize}
-                    width={cellSize}
-                    height={cellSize}
-                    fill={isBorder(row, col) ? PLAYER_COLORS[idx] : "white"}
-                    stroke="none"
-                  />
+                  <g key={`grid-${idx}-${row}-${col}`}>
+                    <rect
+                      x={(origin.col + col) * cellSize}
+                      y={(origin.row + row) * cellSize}
+                      width={cellSize}
+                      height={cellSize}
+                      fill={isBorder(row, col) ? PLAYER_COLORS[idx] : "white"}
+                      stroke="rgba(0,0,0,0.15)"
+                      strokeWidth="0.5"
+                    />
+                  </g>
                 ))
               )}
             </g>
@@ -250,7 +262,7 @@ const LudoBoard = memo(({ gameState, currentPlayerId, onTokenClick, isSpectator,
                   style={{
                     cursor: isMovable ? "pointer" : "default",
                     transform: `translate(${finalX}px, ${finalY}px)`,
-                    transition: "transform 0.08s linear",
+                    transition: "transform 0.12s linear",
                   }}
                 >
                   {/* Home yard colored base circle */}
@@ -327,7 +339,6 @@ const LudoBoard = memo(({ gameState, currentPlayerId, onTokenClick, isSpectator,
       </svg>
     </div>
   );
-});
+};
 
-LudoBoard.displayName = "LudoBoard";
 export default LudoBoard;

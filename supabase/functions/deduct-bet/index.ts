@@ -2,16 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-function jsonResponse(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -19,29 +11,33 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
-    }
-
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Get the user from the auth header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { action, room_id, bet_amount } = await req.json();
 
     if (action === "deduct") {
-      if (typeof bet_amount !== "number" || bet_amount <= 0) {
-        return jsonResponse({ error: "Invalid bet amount" }, 400);
-      }
-
+      // Deduct bet from wallet
       const { data: wallet } = await supabaseAdmin
         .from("wallets")
         .select("balance")
@@ -49,7 +45,10 @@ Deno.serve(async (req) => {
         .single();
 
       if (!wallet || wallet.balance < bet_amount) {
-        return jsonResponse({ error: "Insufficient balance" }, 400);
+        return new Response(JSON.stringify({ error: "Insufficient balance" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       await supabaseAdmin
@@ -64,15 +63,14 @@ Deno.serve(async (req) => {
         description: `Bet placed for room`,
       });
 
-      return jsonResponse({ success: true });
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (action === "refund") {
-      if (!room_id) {
-        return jsonResponse({ error: "room_id required" }, 400);
-      }
-
-      // Verify room exists
+      // Refund bet to wallet
       const { data: room } = await supabaseAdmin
         .from("game_rooms")
         .select("bet_amount, status")
@@ -80,38 +78,18 @@ Deno.serve(async (req) => {
         .single();
 
       if (!room) {
-        return jsonResponse({ error: "Room not found" }, 404);
+        return new Response(JSON.stringify({ error: "Room not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       // Only refund if room is still waiting
       if (room.status !== "waiting") {
-        return jsonResponse({ error: "Cannot refund - game already started" }, 400);
-      }
-
-      // Verify caller is actually a player in this room
-      const { data: playerRecord } = await supabaseAdmin
-        .from("room_players")
-        .select("id")
-        .eq("room_id", room_id)
-        .eq("user_id", user.id)
-        .single();
-
-      if (!playerRecord) {
-        return jsonResponse({ error: "You are not a player in this room" }, 403);
-      }
-
-      // Check if user was already refunded (look for existing refund transaction for this room)
-      const { data: existingRefund } = await supabaseAdmin
-        .from("transactions")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("type", "credit")
-        .eq("amount", room.bet_amount)
-        .like("description", `%${room_id}%`)
-        .limit(1);
-
-      if (existingRefund && existingRefund.length > 0) {
-        return jsonResponse({ error: "Already refunded" }, 400);
+        return new Response(JSON.stringify({ error: "Cannot refund - game already started" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       const { data: wallet } = await supabaseAdmin
@@ -130,17 +108,26 @@ Deno.serve(async (req) => {
           user_id: user.id,
           type: "credit",
           amount: room.bet_amount,
-          description: `Left room ${room_id} — bet refunded`,
+          description: "Left room — bet refunded",
         });
       }
 
-      return jsonResponse({ success: true });
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    return jsonResponse({ error: "Invalid action" }, 400);
+    return new Response(JSON.stringify({ error: "Invalid action" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: unknown) {
     console.error("Error in deduct-bet:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return jsonResponse({ error: errorMessage }, 500);
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

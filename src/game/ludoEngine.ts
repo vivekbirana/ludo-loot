@@ -136,8 +136,6 @@ export interface GameState {
   winner: number | null;
   playerCount: number;
   skipCounts?: number[]; // [playerSeat] -> consecutive skip count
-  lastDiceValue?: number | null; // last dice rolled (persists for opponent display)
-  lastDicePlayer?: number | null; // seat index of who rolled last
 }
 
 export function createInitialGameState(playerCount: number, colorOrder?: number[]): GameState {

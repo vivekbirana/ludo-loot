@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playDiceRollSound } from "@/utils/sounds";
@@ -13,7 +13,7 @@ interface DiceRollerProps {
   turnColor?: string;
 }
 
-const DiceRoller = memo(({ value, onRoll, canRoll, rolling, turnColor }: DiceRollerProps) => {
+const DiceRoller = ({ value, onRoll, canRoll, rolling, turnColor }: DiceRollerProps) => {
   const [animFace, setAnimFace] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -73,7 +73,6 @@ const DiceRoller = memo(({ value, onRoll, canRoll, rolling, turnColor }: DiceRol
       )}
     </div>
   );
-});
+};
 
-DiceRoller.displayName = "DiceRoller";
 export default DiceRoller;

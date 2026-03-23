@@ -93,7 +93,6 @@ Deno.serve(async (req) => {
           user_id: botId,
           is_ready: true,
           color_index: botColor,
-          is_bot: true,
         });
 
       if (insertError) {
