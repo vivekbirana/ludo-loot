@@ -1,7 +1,14 @@
-import { Gamepad2, Trophy, TrendingUp, ArrowUpRight, ArrowDownLeft, LogOut } from "lucide-react";
+import { Gamepad2, Trophy, TrendingUp, ArrowUpRight, ArrowDownLeft, LogOut, Plus, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CoinBalance from "@/components/CoinBalance";
 import StatCard from "@/components/StatCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -80,8 +87,42 @@ const Profile = () => {
 
       {/* Wallet */}
       <div className="glass rounded-2xl p-5 space-y-3">
-        <p className="text-sm text-muted-foreground uppercase tracking-wider">Wallet Balance</p>
-        <CoinBalance amount={wallet?.balance ?? 0} size="lg" />
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground uppercase tracking-wider">Wallet Balance</p>
+            <CoinBalance amount={wallet?.balance ?? 0} size="lg" />
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-gradient-primary text-primary-foreground font-heading font-bold gap-1">
+                <Plus className="w-4 h-4" />
+                Add Coins
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-heading">Add Coins</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <p className="text-sm text-muted-foreground">
+                  To add coins to your wallet, please contact us on the number below:
+                </p>
+                <a
+                  href="tel:+917016239260"
+                  className="flex items-center gap-3 glass rounded-xl p-4 hover:bg-accent/10 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Phone className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-heading font-bold">+91 70162 39260</p>
+                    <p className="text-xs text-muted-foreground">Tap to call</p>
+                  </div>
+                </a>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
