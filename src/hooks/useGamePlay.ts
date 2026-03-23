@@ -39,6 +39,7 @@ export function useGamePlay(roomId: string | null) {
   const [betAmount, setBetAmount] = useState(0);
   const [moveLogs, setMoveLogs] = useState<MoveLog[]>([]);
   const animatingRef = useRef(false);
+  const rollingRef = useRef(false);
   const botPlayingRef = useRef(false);
   const playerNamesRef = useRef<string[]>([]);
   const gameStateRef = useRef<GameState | null>(null);
