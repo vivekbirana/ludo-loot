@@ -270,7 +270,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                       cy={0}
                       r={dottedCircleRadius}
                       fill="none"
-                      stroke={color}
+                      stroke="rgba(0,0,0,0.6)"
                       strokeWidth={1.5}
                       strokeDasharray="3 3"
                       opacity={0.8}
@@ -309,8 +309,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                     cy={0}
                     r={tokenRadius}
                     fill={color}
-                    stroke="#000"
-                    strokeWidth={isMovable ? 2 : 1.2}
+                    stroke="none"
                     opacity={isCurrentTurn || isFinished ? 1 : 0.7}
                   />
                   {/* Token inner */}
