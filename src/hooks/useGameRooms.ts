@@ -118,26 +118,14 @@ export function useGameRooms() {
   const createRoom = async (betAmount: number, maxPlayers: number) => {
     if (!user) return;
 
-    // Check wallet balance
-    const { data: wallet } = await supabase
-      .from("wallets")
-      .select("balance")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!wallet || wallet.balance < betAmount) {
-      toast.error("Insufficient balance");
-      return;
-    }
-
-    // Deduct bet upfront
-    const { error: deductError } = await supabase.functions.invoke("deduct-bet", {
+    // Deduct bet upfront (edge function validates balance)
+    const { data: deductData, error: deductError } = await supabase.functions.invoke("deduct-bet", {
       body: { action: "deduct", bet_amount: betAmount },
     });
 
-    if (deductError) {
-      toast.error("Failed to deduct bet");
-      console.error(deductError);
+    if (deductError || deductData?.error) {
+      toast.error(deductData?.error || "Failed to deduct bet");
+      console.error(deductError || deductData?.error);
       return;
     }
 
