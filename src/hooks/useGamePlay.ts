@@ -471,9 +471,7 @@ export function useGamePlay(roomId: string | null) {
 
     setGameState(result.state);
 
-    if (result.state.winner !== null) {
-      await recordMatch(result.state);
-    }
+    // Prize distribution and match recording handled server-side
 
     toast.info("You left the game and forfeited your bet.");
   };
