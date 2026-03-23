@@ -459,9 +459,7 @@ export function useGamePlay(roomId: string | null) {
 
     setGameState(result.state);
 
-    if (result.state.winner !== null) {
-      await recordMatch(result.state);
-    }
+    // Prize distribution and match recording handled server-side
   };
 
   // ── Quit game (server-side) ───────────────────────────────────
