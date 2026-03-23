@@ -189,30 +189,9 @@ export function useGamePlay(roomId: string | null) {
 
       setGameState(parsed);
       applyPlayerSeatMeta(parsed.colorOrder);
-    } else if (room && user && room.created_by === user.id) {
-      const playerCount = players?.length || 2;
-      const colorOrder = (players || [])
-        .slice(0, playerCount)
-        .map((p, idx) => getPlayerColor(p, idx));
-
-      const initial = createInitialGameState(playerCount, colorOrder);
-
-      const { error } = await supabase.from("game_states").insert([
-        {
-          room_id: roomId,
-          current_turn: initial.currentTurn,
-          turn_phase: initial.turnPhase,
-          token_positions: initial as unknown as Json,
-          turn_start_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (error) {
-        console.error("Failed to create game state:", error);
-      } else {
-        setGameState(initial);
-        applyPlayerSeatMeta(initial.colorOrder);
-      }
+    } else {
+      // Game state will be created by the server via init-game edge function
+      // Poll until it appears
     }
   }, [roomId, user]);
 
