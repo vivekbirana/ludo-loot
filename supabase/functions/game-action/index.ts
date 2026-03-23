@@ -40,6 +40,8 @@ interface GameState {
   winner: number | null;
   playerCount: number;
   skipCounts?: number[];
+  lastDiceValue?: number | null;
+  lastDicePlayer?: number | null;
 }
 
 // ── Dice ──────────────────────────────────────────────────────────
