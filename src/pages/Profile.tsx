@@ -46,6 +46,60 @@ const Profile = () => {
     enabled: !!user,
   });
 
+  const { data: stats } = useQuery({
+    queryKey: ["player-stats", user?.id],
+    queryFn: async () => {
+      // Get all rooms the user participated in
+      const { data: playerRooms } = await supabase
+        .from("room_players")
+        .select("room_id")
+        .eq("user_id", user!.id);
+
+      if (!playerRooms || playerRooms.length === 0) return { played: 0, won: 0, winRate: "0%" };
+
+      const roomIds = playerRooms.map((r) => r.room_id);
+
+      // Get finished rooms
+      const { data: finishedRooms } = await supabase
+        .from("game_rooms")
+        .select("id")
+        .in("id", roomIds)
+        .eq("status", "finished");
+
+      const played = finishedRooms?.length || 0;
+
+      // Get game states to check wins
+      if (played === 0) return { played: 0, won: 0, winRate: "0%" };
+
+      const finishedIds = finishedRooms!.map((r) => r.id);
+      const { data: gameStates } = await supabase
+        .from("game_states")
+        .select("room_id, token_positions")
+        .in("room_id", finishedIds);
+
+      let won = 0;
+      for (const gs of gameStates || []) {
+        const tp = gs.token_positions as any;
+        if (tp?.winner === null || tp?.winner === undefined) continue;
+
+        // Get players for this room to find winner's user_id
+        const { data: roomPlayers } = await supabase
+          .from("room_players")
+          .select("user_id")
+          .eq("room_id", gs.room_id)
+          .order("joined_at", { ascending: true });
+
+        if (roomPlayers && roomPlayers[tp.winner]?.user_id === user!.id) {
+          won++;
+        }
+      }
+
+      const winRate = played > 0 ? `${Math.round((won / played) * 100)}%` : "0%";
+      return { played, won, winRate };
+    },
+    enabled: !!user,
+  });
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/login", { replace: true });
