@@ -101,8 +101,8 @@ export const MAIN_PATH: { row: number; col: number }[] = [
   { row: 13, col: 8 }, // 48
   { row: 14, col: 8 }, // 49
   // Bottom connecting cells (cells 50-51)
-  { row: 14, col: 7 }, // 50
-  { row: 14, col: 6 }, // 51
+  { row: 14, col: 6 }, // 50
+  { row: 14, col: 7 }, // 51 — Blue home entry
   // Wraps back to cell 0: (13, 6)
 ];
 
