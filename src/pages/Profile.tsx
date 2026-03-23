@@ -2,6 +2,13 @@ import { Gamepad2, Trophy, TrendingUp, ArrowUpRight, ArrowDownLeft, LogOut, Plus
 import { Button } from "@/components/ui/button";
 import CoinBalance from "@/components/CoinBalance";
 import StatCard from "@/components/StatCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
