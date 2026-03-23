@@ -257,7 +257,7 @@ export function useGamePlay(roomId: string | null) {
           const newState = payload.new as Record<string, unknown>;
           if (newState?.token_positions) {
             const incoming = newState.token_positions as unknown as GameState;
-            if (!animatingRef.current && !botPlayingRef.current) {
+            if (!animatingRef.current && !botPlayingRef.current && !rollingRef.current) {
               setGameState(incoming);
               // If playerIndex hasn't been set yet, reload to set player metadata
               if (playerIndexRef.current === null) {
