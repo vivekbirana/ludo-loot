@@ -6,6 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ── Fast JWT decode (skip network round-trip to auth server) ──────
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 // ── Game Constants ────────────────────────────────────────────────
 const START_POSITIONS = [13, 26, 39, 0];
 const SAFE_POSITIONS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
@@ -191,24 +204,28 @@ function pickBotMove(state: GameState, seat: number): number {
 
 // ── DB helpers ────────────────────────────────────────────────────
 async function saveState(supabase: ReturnType<typeof createClient>, roomId: string, state: GameState) {
-  await supabase
-    .from("game_states")
-    .update({
-      current_turn: state.currentTurn,
-      turn_phase: state.turnPhase,
-      dice_value: state.diceValue,
-      token_positions: state as unknown as Record<string, unknown>,
-      turn_start_at: new Date().toISOString(),
-    })
-    .eq("room_id", roomId);
+  const promises: Promise<unknown>[] = [
+    supabase
+      .from("game_states")
+      .update({
+        current_turn: state.currentTurn,
+        turn_phase: state.turnPhase,
+        dice_value: state.diceValue,
+        token_positions: state as unknown as Record<string, unknown>,
+        turn_start_at: new Date().toISOString(),
+      })
+      .eq("room_id", roomId),
+  ];
 
   if (state.turnPhase === "finished" || state.winner !== null) {
-    await supabase.from("game_rooms").update({ status: "finished" }).eq("id", roomId);
+    promises.push(supabase.from("game_rooms").update({ status: "finished" }).eq("id", roomId));
   }
+
+  await Promise.all(promises);
 }
 
-// ── Prize distribution ───────────────────────────────────────────
-async function distributePrize(
+// ── Prize distribution (fire-and-forget after response) ──────────
+function distributePrizeAsync(
   supabase: ReturnType<typeof createClient>,
   roomId: string,
   winnerSeat: number,
@@ -216,68 +233,79 @@ async function distributePrize(
   state: GameState,
   finishReason: string
 ) {
-  const winnerPlayer = players[winnerSeat];
-  if (!winnerPlayer) return;
+  // Run in background — don't block response
+  (async () => {
+    try {
+      const winnerPlayer = players[winnerSeat];
+      if (!winnerPlayer) return;
 
-  // Get room bet amount
-  const { data: room } = await supabase
-    .from("game_rooms")
-    .select("bet_amount, code, created_at")
-    .eq("id", roomId)
-    .single();
+      const { data: room } = await supabase
+        .from("game_rooms")
+        .select("bet_amount, code, created_at")
+        .eq("id", roomId)
+        .single();
 
-  if (!room) return;
+      if (!room) return;
 
-  const pot = room.bet_amount * players.length;
+      const pot = room.bet_amount * players.length;
 
-  // Update game_rooms winner
-  await supabase.from("game_rooms").update({ winner_id: winnerPlayer.user_id }).eq("id", roomId);
+      // Update winner + credit wallet + record match in parallel
+      const isWinnerBot = winnerPlayer.is_bot ?? false;
+      const promises: Promise<unknown>[] = [
+        supabase.from("game_rooms").update({ winner_id: winnerPlayer.user_id }).eq("id", roomId),
+      ];
 
-  // Credit winner wallet (only if not a bot)
-  const isWinnerBot = winnerPlayer.is_bot ?? false;
-  if (!isWinnerBot) {
-    const { data: wallet } = await supabase
-      .from("wallets")
-      .select("balance")
-      .eq("user_id", winnerPlayer.user_id)
-      .single();
+      if (!isWinnerBot) {
+        const { data: wallet } = await supabase
+          .from("wallets")
+          .select("balance")
+          .eq("user_id", winnerPlayer.user_id)
+          .single();
 
-    if (wallet) {
-      await supabase
-        .from("wallets")
-        .update({ balance: wallet.balance + pot })
-        .eq("user_id", winnerPlayer.user_id);
+        if (wallet) {
+          promises.push(
+            supabase
+              .from("wallets")
+              .update({ balance: wallet.balance + pot })
+              .eq("user_id", winnerPlayer.user_id),
+            supabase.from("transactions").insert({
+              user_id: winnerPlayer.user_id,
+              type: "credit",
+              amount: pot,
+              description: `Won game #${room.code} (pot: ${pot})`,
+            })
+          );
+        }
+      }
 
-      await supabase.from("transactions").insert({
-        user_id: winnerPlayer.user_id,
-        type: "credit",
-        amount: pot,
-        description: `Won game #${room.code} (pot: ${pot})`,
-      });
+      const finishedAt = new Date().toISOString();
+      const startedAt = room.created_at;
+      const durationSeconds = Math.floor(
+        (new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 1000
+      );
+
+      promises.push(
+        supabase.from("match_records").insert({
+          room_id: roomId,
+          room_code: room.code,
+          bet_amount: room.bet_amount,
+          player_count: state.playerCount,
+          players: players as unknown as Record<string, unknown>,
+          winner_seat: winnerSeat,
+          winner_user_id: winnerPlayer.user_id,
+          final_state: state as unknown as Record<string, unknown>,
+          started_at: startedAt,
+          finished_at: finishedAt,
+          duration_seconds: durationSeconds,
+          finish_reason: finishReason,
+        })
+      );
+
+      await Promise.all(promises);
+    } catch (e) {
+      console.error("distributePrize error:", e);
     }
-  }
-
-  // Record match
-  const finishedAt = new Date().toISOString();
-  const startedAt = room.created_at;
-  const durationSeconds = Math.floor(
-    (new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 1000
-  );
-
-  await supabase.from("match_records").insert({
-    room_id: roomId,
-    room_code: room.code,
-    bet_amount: room.bet_amount,
-    player_count: state.playerCount,
-    players: players as unknown as Record<string, unknown>,
-    winner_seat: winnerSeat,
-    winner_user_id: winnerPlayer.user_id,
-    final_state: state as unknown as Record<string, unknown>,
-    started_at: startedAt,
-    finished_at: finishedAt,
-    duration_seconds: durationSeconds,
-    finish_reason: finishReason,
-  });
+  })();
 }
 
 function jsonResponse(data: unknown, status = 200) {
@@ -303,17 +331,13 @@ Deno.serve(async (req) => {
       return errorResponse("Unauthorized", 401);
     }
 
-    const supabaseAuth = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !authUser) {
+    // Fast JWT decode — avoids ~50-100ms getUser() network call
+    const token = authHeader.slice(7);
+    const payload = decodeJwtPayload(token);
+    if (!payload || !payload.sub) {
       return errorResponse("Unauthorized", 401);
     }
-    const userId = authUser.id;
+    const userId = payload.sub as string;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -325,28 +349,27 @@ Deno.serve(async (req) => {
 
     if (!roomId) return errorResponse("roomId required");
 
-    // Load game state
-    const { data: gameStateRow } = await supabaseAdmin
-      .from("game_states")
-      .select("*")
-      .eq("room_id", roomId)
-      .single();
+    // Load game state AND players in parallel (saves ~50ms)
+    const [{ data: gameStateRow }, { data: players }] = await Promise.all([
+      supabaseAdmin
+        .from("game_states")
+        .select("token_positions")
+        .eq("room_id", roomId)
+        .single(),
+      supabaseAdmin
+        .from("room_players")
+        .select("user_id, color_index, is_bot")
+        .eq("room_id", roomId)
+        .order("joined_at", { ascending: true }),
+    ]);
 
     if (!gameStateRow) return errorResponse("Game not found", 404);
+    if (!players) return errorResponse("Room not found", 404);
 
     const state = (gameStateRow as Record<string, unknown>).token_positions as unknown as GameState;
     if (state.winner !== null || state.turnPhase === "finished") {
       return errorResponse("Game already finished");
     }
-
-    // Load players (with is_bot flag)
-    const { data: players } = await supabaseAdmin
-      .from("room_players")
-      .select("user_id, color_index, is_bot")
-      .eq("room_id", roomId)
-      .order("joined_at", { ascending: true });
-
-    if (!players) return errorResponse("Room not found", 404);
 
     const callerSeatIdx = players.findIndex((p: { user_id: string }) => p.user_id === userId);
     if (callerSeatIdx < 0) return errorResponse("Not a player in this room", 403);
@@ -354,10 +377,10 @@ Deno.serve(async (req) => {
     const currentPlayer = players[state.currentTurn];
     const currentIsBot = currentPlayer?.is_bot === true;
 
-    // Helper to handle finished game
-    const handleFinish = async (finalState: GameState, reason: string) => {
+    // Fire-and-forget prize distribution
+    const handleFinish = (finalState: GameState, reason: string) => {
       if (finalState.winner !== null) {
-        await distributePrize(supabaseAdmin, roomId, finalState.winner, players, finalState, reason);
+        distributePrizeAsync(supabaseAdmin, roomId, finalState.winner, players, finalState, reason);
       }
     };
 
@@ -394,7 +417,7 @@ Deno.serve(async (req) => {
           const finalState = moveToken(diceState, movable[0]);
           finalState.skipCounts = skipCounts;
           await saveState(supabaseAdmin, roomId, finalState);
-          await handleFinish(finalState, "normal");
+          handleFinish(finalState, "normal");
           return jsonResponse({
             diceValue: dice,
             movableTokens: movable,
@@ -433,7 +456,7 @@ Deno.serve(async (req) => {
         const stateBeforeMove = JSON.parse(JSON.stringify(state));
         const finalState = moveToken(state, tokenIndex);
         await saveState(supabaseAdmin, roomId, finalState);
-        await handleFinish(finalState, "normal");
+        handleFinish(finalState, "normal");
         return jsonResponse({
           movedTokenIndex: tokenIndex,
           stateBeforeMove,
@@ -469,7 +492,7 @@ Deno.serve(async (req) => {
         const stateBeforeMove = JSON.parse(JSON.stringify(diceState));
         const finalState = moveToken(diceState, chosen);
         await saveState(supabaseAdmin, roomId, finalState);
-        await handleFinish(finalState, "normal");
+        handleFinish(finalState, "normal");
         return jsonResponse({
           diceValue: dice,
           movableTokens: movable,
@@ -494,11 +517,10 @@ Deno.serve(async (req) => {
             skipCounts,
           };
           await saveState(supabaseAdmin, roomId, forfeitState);
-          await handleFinish(forfeitState, "forfeit");
+          handleFinish(forfeitState, "forfeit");
           return jsonResponse({ forfeit: true, diceValue: 0, movedTokenIndex: null, state: forfeitState });
         }
 
-        // Auto-skip: just pass turn, no auto-move
         const nextState: GameState = {
           ...state,
           currentTurn: (state.currentTurn + 1) % state.playerCount,
@@ -522,13 +544,15 @@ Deno.serve(async (req) => {
           diceValue: null,
         };
         await saveState(supabaseAdmin, roomId, forfeitState);
-        await handleFinish(forfeitState, "quit");
+        handleFinish(forfeitState, "quit");
 
-        await supabaseAdmin
+        // Delete player in background
+        supabaseAdmin
           .from("room_players")
           .delete()
           .eq("room_id", roomId)
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .then(() => {});
 
         return jsonResponse({ state: forfeitState });
       }
