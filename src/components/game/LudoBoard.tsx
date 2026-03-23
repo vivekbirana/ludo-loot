@@ -233,7 +233,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                   style={{
                     cursor: isMovable ? "pointer" : "default",
                     transform: `translate(${finalX}px, ${finalY}px)`,
-                    transition: "transform 0.3s ease-in-out",
+                    transition: "transform 0.12s linear",
                   }}
                 >
                   {/* Glow for movable tokens */}
