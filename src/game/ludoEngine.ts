@@ -119,7 +119,7 @@ export const HOME_COLUMNS: { row: number; col: number }[][] = [
 ];
 
 // Entry to home column: the main path index just before entering home column
-export const HOME_ENTRY_POSITIONS = [12, 25, 38, 50];
+export const HOME_ENTRY_POSITIONS = [11, 24, 37, 50];
 
 export interface TokenState {
   position: "home" | "path" | "home_column" | "finished";
