@@ -430,6 +430,7 @@ export function useGamePlay(roomId: string | null) {
     const diceState: GameState = { ...gameState, diceValue: dice, turnPhase: "moving", skipCounts };
     await saveGameState(diceState);
     setRolling(false);
+    rollingRef.current = false;
 
     const movable = getMovableTokens(diceState);
     if (movable.length === 0) {
