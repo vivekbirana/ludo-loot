@@ -19,7 +19,7 @@ const DiceRoller = ({ value, onRoll, canRoll, rolling, turnColor }: DiceRollerPr
 
   useEffect(() => {
     if (rolling) {
-      playDiceRollSound(300);
+      playDiceRollSound(600);
       let i = 0;
       intervalRef.current = setInterval(() => {
         setAnimFace(i % 6);
