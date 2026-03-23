@@ -40,6 +40,8 @@ interface GameState {
   winner: number | null;
   playerCount: number;
   skipCounts?: number[];
+  lastDiceValue?: number | null;
+  lastDicePlayer?: number | null;
 }
 
 // ── Dice ──────────────────────────────────────────────────────────
@@ -397,7 +399,7 @@ Deno.serve(async (req) => {
         const skipCounts = [...(state.skipCounts || Array(state.playerCount).fill(0))];
         skipCounts[callerSeatIdx] = 0;
 
-        const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving", skipCounts };
+        const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving", skipCounts, lastDiceValue: dice, lastDicePlayer: callerSeatIdx };
         const movable = getMovableTokens(diceState);
 
         if (movable.length === 0) {
@@ -473,7 +475,7 @@ Deno.serve(async (req) => {
         }
 
         const dice = serverRollDice(state);
-        const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
+        const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving", lastDiceValue: dice, lastDicePlayer: state.currentTurn };
         const movable = getMovableTokens(diceState);
 
         if (movable.length === 0) {
