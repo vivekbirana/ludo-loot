@@ -356,10 +356,13 @@ export function useGamePlay(roomId: string | null) {
 
     setRolling(true);
     rollingRef.current = true;
-    playDiceRollSound(500);
-    await new Promise((r) => setTimeout(r, 600));
+    playDiceRollSound(300);
 
-    const result = await invokeGameAction("roll");
+    // Start network call and animation in parallel
+    const [result] = await Promise.all([
+      invokeGameAction("roll"),
+      new Promise((r) => setTimeout(r, 350)),
+    ]);
     setRolling(false);
     rollingRef.current = false;
 
