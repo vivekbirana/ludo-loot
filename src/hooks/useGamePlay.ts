@@ -514,12 +514,13 @@ export function useGamePlay(roomId: string | null) {
       const from = token.pathIndex;
       const homeEntry = HOME_ENTRY_POSITIONS[colorIdx];
       const distToHome = ((homeEntry - from + 52) % 52);
-      if (distToHome > 0 && distToHome <= dice) {
+      if (distToHome > 0 && distToHome < dice) {
         const remaining = dice - distToHome;
-        if (remaining === 0) {
-          return `rolled ${dice}, ${from} → H0`;
-        }
         return `rolled ${dice}, ${from} → H${remaining - 1}`;
+      } else if (distToHome > 0 && distToHome === dice) {
+        // Land exactly on home entry — stay on path
+        const capture = detectCapture(homeEntry);
+        return `rolled ${dice}, ${from} → ${homeEntry}${capture}`;
       } else if (distToHome === 0) {
         return `rolled ${dice}, ${from} → H${dice - 1}`;
       }
