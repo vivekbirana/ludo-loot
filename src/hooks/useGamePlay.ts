@@ -408,10 +408,36 @@ export function useGamePlay(roomId: string | null) {
 
   const describeMove = (state: GameState, tokenIndex: number, dice: number): string => {
     const token = state.tokens[state.currentTurn][tokenIndex];
+    const colorIdx = state.colorOrder?.[state.currentTurn] ?? state.currentTurn;
     if (token.position === "home" && dice === 6) {
-      return `rolled ${dice}, moved token out`;
+      const startPos = START_POSITIONS[colorIdx];
+      return `rolled ${dice}, moved out → ${startPos}`;
     }
-    return `rolled ${dice}, moved token ${dice} steps`;
+    if (token.position === "path") {
+      const from = token.pathIndex;
+      const homeEntry = HOME_ENTRY_POSITIONS[colorIdx];
+      const distToHome = ((homeEntry - from + 52) % 52);
+      if (distToHome > 0 && distToHome <= dice) {
+        const remaining = dice - distToHome;
+        if (remaining === 0) {
+          return `rolled ${dice}, ${from} → H0`;
+        }
+        return `rolled ${dice}, ${from} → H${remaining - 1}`;
+      } else if (distToHome === 0) {
+        return `rolled ${dice}, ${from} → H${dice - 1}`;
+      }
+      const to = (from + dice) % 52;
+      return `rolled ${dice}, ${from} → ${to}`;
+    }
+    if (token.position === "home_column") {
+      const from = token.pathIndex;
+      const to = Math.min(from + dice, 5);
+      if (to >= 5) {
+        return `rolled ${dice}, H${from} → finished`;
+      }
+      return `rolled ${dice}, H${from} → H${to}`;
+    }
+    return `rolled ${dice}, moved token`;
   };
 
   const handleRollDice = async () => {
