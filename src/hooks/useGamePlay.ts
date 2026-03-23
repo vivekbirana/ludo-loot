@@ -289,7 +289,7 @@ export function useGamePlay(roomId: string | null) {
     for (const stepState of steps) {
       setGameState(stepState);
       playTokenMoveSound();
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 80));
     }
     animatingRef.current = false;
   };
@@ -374,14 +374,14 @@ export function useGamePlay(roomId: string | null) {
       // Single movable token — animate the auto-move
       addLog(playerIndex, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
       setGameState(result.stateBeforeMove);
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 150));
       await animateTokenMove(result.stateBeforeMove, result.movedTokenIndex);
       setGameState(result.state);
     } else if (result.movableTokens.length === 0) {
       // No moves
       addLog(playerIndex, dice, `rolled ${dice}, no moves`, gameState);
       setGameState({ ...gameState, diceValue: dice, turnPhase: "moving" });
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 300));
       setGameState(result.state);
     } else {
       // Multiple choices — show dice, wait for token click
@@ -426,7 +426,7 @@ export function useGamePlay(roomId: string | null) {
       const diceState: GameState = { ...state, diceValue: dice, turnPhase: "moving" };
       setGameState(diceState);
       addLog(state.currentTurn, dice, describeMove(result.stateBeforeMove, result.movedTokenIndex, dice), result.stateBeforeMove);
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 200));
       await animateTokenMove(result.stateBeforeMove, result.movedTokenIndex);
       setGameState(result.state);
     } else {
