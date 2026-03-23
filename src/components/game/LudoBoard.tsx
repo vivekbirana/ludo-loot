@@ -52,6 +52,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
   }, [gameState, currentPlayerId, isSpectator]);
 
   const getSeatColorIndex = (seat: number) => gameState.colorOrder?.[seat] ?? seat;
+  const rotation = myColorIndex !== undefined ? (ROTATION_BY_COLOR[myColorIndex] ?? 0) : 0;
 
   return (
     <div className="relative mx-auto" style={{ width: boardWidth, height: boardWidth }}>
@@ -60,6 +61,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
         width={boardWidth}
         height={boardWidth}
         className="rounded-xl"
+        style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}
       >
         {/* Background */}
         <rect width={boardWidth} height={boardWidth} fill="hsl(40, 30%, 95%)" rx="12" />
