@@ -69,8 +69,8 @@ export const MAIN_PATH: { row: number; col: number }[] = [
   { row: 1, col: 6 },  // 22
   { row: 0, col: 6 },  // 23
   // Top connecting cells (cells 24-25)
-  { row: 0, col: 7 },  // 24
-  { row: 0, col: 8 },  // 25
+  { row: 0, col: 8 },  // 24
+  { row: 0, col: 7 },  // 25 — Green home entry
   // Green start — top arm, col 8, going down (cells 26-30)
   { row: 1, col: 8 },  // 26 — Green start/safe
   { row: 2, col: 8 },  // 27
