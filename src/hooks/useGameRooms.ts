@@ -130,6 +130,17 @@ export function useGameRooms() {
       return;
     }
 
+    // Deduct bet upfront
+    const { error: deductError } = await supabase.functions.invoke("deduct-bet", {
+      body: { action: "deduct", bet_amount: betAmount },
+    });
+
+    if (deductError) {
+      toast.error("Failed to deduct bet");
+      console.error(deductError);
+      return;
+    }
+
     const code = generateRoomCode();
 
     const { data: room, error } = await supabase
@@ -139,6 +150,10 @@ export function useGameRooms() {
       .single();
 
     if (error) {
+      // Refund if room creation fails
+      await supabase.functions.invoke("deduct-bet", {
+        body: { action: "refund", room_id: room?.id },
+      });
       toast.error("Failed to create room");
       console.error(error);
       return;
@@ -155,7 +170,7 @@ export function useGameRooms() {
       return;
     }
 
-    toast.success(`Room #${code} created!`);
+    toast.success(`Room #${code} created! ₹${betAmount} deducted.`);
     return room;
   };
 
