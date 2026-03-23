@@ -327,6 +327,7 @@ const LudoBoard = memo(({ gameState, currentPlayerId, onTokenClick, isSpectator,
       </svg>
     </div>
   );
-};
+});
 
+LudoBoard.displayName = "LudoBoard";
 export default LudoBoard;
