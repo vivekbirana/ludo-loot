@@ -20,9 +20,12 @@ interface LudoBoardProps {
   currentPlayerId: number | null;
   onTokenClick: (tokenIndex: number) => void;
   isSpectator?: boolean;
+  myColorIndex?: number;
 }
 
-const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator }: LudoBoardProps) => {
+const ROTATION_BY_COLOR: Record<number, number> = { 0: 270, 1: 180, 2: 90, 3: 0 };
+
+const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myColorIndex }: LudoBoardProps) => {
   const boardWidth = 363;
   const cellSize = boardWidth / BOARD_SIZE;
   const prevTokensRef = useRef<string>("");

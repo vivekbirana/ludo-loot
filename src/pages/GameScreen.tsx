@@ -168,6 +168,7 @@ const GameScreen = () => {
           currentPlayerId={playerIndex}
           onTokenClick={handleTokenClick}
           isSpectator={isSpectator}
+          myColorIndex={playerIndex !== null ? (gameState.colorOrder?.[playerIndex] ?? playerIndex) : undefined}
         />
       </div>
 
