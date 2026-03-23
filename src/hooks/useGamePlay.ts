@@ -381,7 +381,7 @@ export function useGamePlay(roomId: string | null) {
       // No moves
       addLog(playerIndex, dice, `rolled ${dice}, no moves`, gameState);
       setGameState({ ...gameState, diceValue: dice, turnPhase: "moving" });
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 300));
       setGameState(result.state);
     } else {
       // Multiple choices — show dice, wait for token click
