@@ -399,13 +399,14 @@ export function useGamePlay(roomId: string | null) {
 
     addLog(playerIndex, gameState.diceValue || 0, describeMove(gameState, tokenIndex, gameState.diceValue || 0), gameState);
 
-    const result = await invokeGameAction("move", { tokenIndex });
+    // Start animation immediately (don't wait for server)
+    const animPromise = animateTokenMove(gameState, tokenIndex);
+    const serverPromise = invokeGameAction("move", { tokenIndex });
+
+    const [, result] = await Promise.all([animPromise, serverPromise]);
     if (!result) return;
 
-    await animateTokenMove(gameState, tokenIndex);
     setGameState(result.state);
-
-    // Prize distribution and match recording handled server-side
   };
 
   // ── Bot turn (server-side) ────────────────────────────────────
