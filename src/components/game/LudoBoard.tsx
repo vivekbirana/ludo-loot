@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, memo } from "react";
 import {
   BOARD_SIZE,
   MAIN_PATH,
@@ -13,7 +13,6 @@ import {
   getMovableTokens,
 } from "@/game/ludoEngine";
 import { cn } from "@/lib/utils";
-import { playTokenMoveSound } from "@/utils/sounds";
 
 interface LudoBoardProps {
   gameState: GameState;
@@ -25,19 +24,10 @@ interface LudoBoardProps {
 
 const ROTATION_BY_COLOR: Record<number, number> = { 0: 270, 1: 180, 2: 90, 3: 0 };
 
-const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myColorIndex }: LudoBoardProps) => {
+const LudoBoard = memo(({ gameState, currentPlayerId, onTokenClick, isSpectator, myColorIndex }: LudoBoardProps) => {
   const boardWidth = 363;
   const cellSize = boardWidth / BOARD_SIZE;
-  const prevTokensRef = useRef<string>("");
-
-  // Play sound on token position changes
-  useEffect(() => {
-    const key = JSON.stringify(gameState.tokens);
-    if (prevTokensRef.current && prevTokensRef.current !== key) {
-      playTokenMoveSound();
-    }
-    prevTokensRef.current = key;
-  }, [gameState.tokens]);
+  // Sound is handled by useGamePlay animation — no duplicate here
 
   const movableTokens = useMemo(() => {
     if (
@@ -260,7 +250,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                   style={{
                     cursor: isMovable ? "pointer" : "default",
                     transform: `translate(${finalX}px, ${finalY}px)`,
-                    transition: "transform 0.12s linear",
+                    transition: "transform 0.2s ease-out",
                   }}
                 >
                   {/* Home yard colored base circle */}
@@ -337,6 +327,7 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
       </svg>
     </div>
   );
-};
+});
 
+LudoBoard.displayName = "LudoBoard";
 export default LudoBoard;
