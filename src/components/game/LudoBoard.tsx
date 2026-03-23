@@ -238,6 +238,11 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
               const isCurrentTurn = gameState.currentTurn === playerSeat;
               const isFinished = token.position === "finished";
 
+              const isHome = token.position === "home";
+              const tokenRadius = isFinished ? cellSize * 0.22 : cellSize * 0.32;
+              const baseCircleRadius = tokenRadius * 1.05;
+              const dottedCircleRadius = tokenRadius * 1.25;
+
               return (
                 <g
                   key={`token-${playerSeat}-${tokenIdx}`}
@@ -248,6 +253,38 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                     transition: "transform 0.12s linear",
                   }}
                 >
+                  {/* Home yard colored base circle */}
+                  {isHome && (
+                    <circle
+                      cx={0}
+                      cy={0}
+                      r={baseCircleRadius}
+                      fill={color}
+                      opacity={0.35}
+                    />
+                  )}
+                  {/* Rotating dotted circle for current turn tokens in home */}
+                  {isHome && isCurrentTurn && (
+                    <circle
+                      cx={0}
+                      cy={0}
+                      r={dottedCircleRadius}
+                      fill="none"
+                      stroke={color}
+                      strokeWidth={1.5}
+                      strokeDasharray="3 3"
+                      opacity={0.8}
+                    >
+                      <animateTransform
+                        attributeName="transform"
+                        type="rotate"
+                        from="0 0 0"
+                        to="360 0 0"
+                        dur="2s"
+                        repeatCount="indefinite"
+                      />
+                    </circle>
+                  )}
                   {/* Glow for movable tokens */}
                   {isMovable && (
                     <circle
@@ -263,14 +300,14 @@ const LudoBoard = ({ gameState, currentPlayerId, onTokenClick, isSpectator, myCo
                   <circle
                     cx={1}
                     cy={1}
-                    r={isFinished ? cellSize * 0.22 : cellSize * 0.32}
+                    r={tokenRadius}
                     fill="rgba(0,0,0,0.12)"
                   />
                   {/* Token body */}
                   <circle
                     cx={0}
                     cy={0}
-                    r={isFinished ? cellSize * 0.22 : cellSize * 0.32}
+                    r={tokenRadius}
                     fill={color}
                     stroke="#000"
                     strokeWidth={isMovable ? 2 : 1.2}
