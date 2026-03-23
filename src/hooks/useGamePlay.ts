@@ -9,6 +9,8 @@ import {
   moveToken,
   getIntermediateSteps,
   PLAYER_NAMES,
+  START_POSITIONS,
+  HOME_ENTRY_POSITIONS,
 } from "@/game/ludoEngine";
 import { smartRollDice } from "@/game/smartDice";
 import { toast } from "sonner";
