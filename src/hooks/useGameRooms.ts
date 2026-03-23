@@ -311,6 +311,18 @@ export function useGameRooms() {
       return;
     }
 
+    // Create game state on server first
+    const { error: initError } = await supabase.functions.invoke("init-game", {
+      body: { roomId: currentRoom.id },
+    });
+
+    if (initError) {
+      toast.error("Failed to initialize game");
+      console.error(initError);
+      return;
+    }
+
+    // Then update room status
     const { error } = await supabase
       .from("game_rooms")
       .update({ status: "in_progress" })
