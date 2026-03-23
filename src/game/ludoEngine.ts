@@ -256,16 +256,21 @@ export function getIntermediateSteps(state: GameState, tokenIndex: number): Game
         // Already at home entry — move into home column
         stepToken.position = "home_column";
         stepToken.pathIndex = s - 1;
-      } else if (distToHome > 0 && distToHome <= diceValue && s >= distToHome) {
-        // Past the home entry — now in home column
-        const homeIdx = s - distToHome;
-        stepToken.position = "home_column";
-        stepToken.pathIndex = homeIdx;
-      } else if (distToHome > 0 && distToHome <= diceValue && s === distToHome - 1) {
-        // Step onto the home entry cell on the path (visual step before entering home column)
-        stepToken.pathIndex = homeEntry;
+      } else if (distToHome > 0 && distToHome <= diceValue) {
+        if (s < distToHome) {
+          // Still on the main path, walking toward home entry
+          stepToken.pathIndex = (token.pathIndex + s) % 52;
+        } else if (s === distToHome) {
+          // Landing on the home entry cell (stay on path visually)
+          stepToken.pathIndex = homeEntry;
+        } else {
+          // Past home entry — now in home column
+          const homeIdx = s - distToHome - 1;
+          stepToken.position = "home_column";
+          stepToken.pathIndex = homeIdx;
+        }
       } else {
-        // Normal path movement
+        // Normal path movement (not near home)
         stepToken.pathIndex = (token.pathIndex + s) % 52;
       }
       steps.push(stepState);
