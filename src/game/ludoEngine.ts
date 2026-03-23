@@ -310,21 +310,19 @@ export function moveToken(state: GameState, tokenIndex: number): GameState {
     const homeEntry = HOME_ENTRY_POSITIONS[currentColorIndex];
     const distToHome = ((homeEntry - token.pathIndex + 52) % 52);
 
-    if (distToHome > 0 && distToHome <= diceValue) {
-      // Enter home column
+    if (distToHome > 0 && distToHome < diceValue) {
+      // Pass home entry and enter home column
       const remaining = diceValue - distToHome;
-      if (remaining === 0) {
-        // Land on home entry, actually enter home column at index 0
-        token.position = "home_column";
-        token.pathIndex = 0;
-      } else {
-        token.position = "home_column";
-        token.pathIndex = remaining - 1;
-      }
+      token.position = "home_column";
+      token.pathIndex = remaining - 1;
       if (token.pathIndex === 5) {
         token.position = "finished";
         gotHome = true;
       }
+    } else if (distToHome > 0 && distToHome === diceValue) {
+      // Land exactly on home entry — stay on path
+      token.pathIndex = homeEntry;
+      gotKill = checkAndKill(newState, currentTurn, token.pathIndex);
     } else if (distToHome === 0) {
       // Already at home entry
       token.position = "home_column";
