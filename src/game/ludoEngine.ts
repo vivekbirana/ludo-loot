@@ -53,8 +53,8 @@ export const MAIN_PATH: { row: number; col: number }[] = [
   { row: 8, col: 1 },  // 9
   { row: 8, col: 0 },  // 10
   // Left connecting cells (cells 11-12)
-  { row: 7, col: 0 },  // 11
-  { row: 6, col: 0 },  // 12
+  { row: 6, col: 0 },  // 11
+  { row: 7, col: 0 },  // 12 — Red home entry
   // Red start — left arm, row 6, going right (cells 13-17)
   { row: 6, col: 1 },  // 13 — Red start/safe
   { row: 6, col: 2 },  // 14
@@ -69,8 +69,8 @@ export const MAIN_PATH: { row: number; col: number }[] = [
   { row: 1, col: 6 },  // 22
   { row: 0, col: 6 },  // 23
   // Top connecting cells (cells 24-25)
-  { row: 0, col: 7 },  // 24
-  { row: 0, col: 8 },  // 25
+  { row: 0, col: 8 },  // 24
+  { row: 0, col: 7 },  // 25 — Green home entry
   // Green start — top arm, col 8, going down (cells 26-30)
   { row: 1, col: 8 },  // 26 — Green start/safe
   { row: 2, col: 8 },  // 27
@@ -85,8 +85,8 @@ export const MAIN_PATH: { row: number; col: number }[] = [
   { row: 6, col: 13 }, // 35
   { row: 6, col: 14 }, // 36
   // Right connecting cells (cells 37-38)
-  { row: 7, col: 14 }, // 37
-  { row: 8, col: 14 }, // 38
+  { row: 8, col: 14 }, // 37
+  { row: 7, col: 14 }, // 38 — Yellow home entry
   // Yellow start — right arm, row 8, going left (cells 39-43)
   { row: 8, col: 13 }, // 39 — Yellow start/safe
   { row: 8, col: 12 }, // 40
@@ -101,8 +101,8 @@ export const MAIN_PATH: { row: number; col: number }[] = [
   { row: 13, col: 8 }, // 48
   { row: 14, col: 8 }, // 49
   // Bottom connecting cells (cells 50-51)
-  { row: 14, col: 7 }, // 50
-  { row: 14, col: 6 }, // 51
+  { row: 14, col: 6 }, // 50
+  { row: 14, col: 7 }, // 51 — Blue home entry
   // Wraps back to cell 0: (13, 6)
 ];
 
