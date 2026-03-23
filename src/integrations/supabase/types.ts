@@ -97,6 +97,60 @@ export type Database = {
           },
         ]
       }
+      match_records: {
+        Row: {
+          bet_amount: number
+          created_at: string
+          duration_seconds: number | null
+          final_state: Json | null
+          finish_reason: string
+          finished_at: string
+          id: string
+          move_log: Json | null
+          player_count: number
+          players: Json
+          room_code: string
+          room_id: string
+          started_at: string
+          winner_seat: number | null
+          winner_user_id: string | null
+        }
+        Insert: {
+          bet_amount?: number
+          created_at?: string
+          duration_seconds?: number | null
+          final_state?: Json | null
+          finish_reason?: string
+          finished_at?: string
+          id?: string
+          move_log?: Json | null
+          player_count?: number
+          players?: Json
+          room_code: string
+          room_id: string
+          started_at?: string
+          winner_seat?: number | null
+          winner_user_id?: string | null
+        }
+        Update: {
+          bet_amount?: number
+          created_at?: string
+          duration_seconds?: number | null
+          final_state?: Json | null
+          finish_reason?: string
+          finished_at?: string
+          id?: string
+          move_log?: Json | null
+          player_count?: number
+          players?: Json
+          room_code?: string
+          room_id?: string
+          started_at?: string
+          winner_seat?: number | null
+          winner_user_id?: string | null
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           code: string
